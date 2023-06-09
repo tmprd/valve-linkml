@@ -9,7 +9,7 @@ def generate_schema_data(table_dicts: List[dict], column_dicts: List[dict]):
     # Map some pre-generated data to our data tables if we have the right kind
     table_names = [t["table"] for t in table_dicts]
     if "Person" in table_names and "Address" in table_names:
-        pregenerated_table_data: dict = generate_tables_from_fhir_mapping(table_dicts, column_dicts)
+        pregenerated_table_data: dict = generate_tables_from_fhir_mapping()
 
     # Create the data tables themselves
     for table_dict in table_dicts:
@@ -42,7 +42,7 @@ def generate_schema_data(table_dicts: List[dict], column_dicts: List[dict]):
 
 def generate_tables_from_fhir_mapping() -> dict:
     # Read the pre-generated data
-    TEST_PATIENT_DATA_FILE_PATH = "test/linkml2valve/data/synthea_patients.csv"
+    TEST_PATIENT_DATA_FILE_PATH = "test/linkml2valve/synthea/patients.csv"
     with open(TEST_PATIENT_DATA_FILE_PATH, "r") as synthea_patients_file:
         reader = csv.DictReader(synthea_patients_file, delimiter=",")
         # Map the columns we want
@@ -76,7 +76,7 @@ def map_fhirpatient2address(fhir_patient: dict):
 
 
 def create_generation_prompt(table_name: str, table_column_dicts: List[str]):
-    """Warning: experimental!"""
+    """Warning: experimental! This just creates a prompt and doesn't do anything with it."""
 
     print(f"The {table_name} table has these columns:")
     for c in table_column_dicts:

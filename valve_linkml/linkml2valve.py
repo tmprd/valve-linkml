@@ -32,7 +32,8 @@ DEFAULT_DATATYPE = 'text'
 def main():
     # CLI
     parser = ArgumentParser()
-    parser.add_argument('yaml_schema_path', type=str)
+    parser.add_argument('yaml_schema_path', type=str, help="Path to LinkML YAML schema file")
+    parser.add_argument("-o", "--output-dir", required=True, help="Output directory for VALVE tables")
     parser.add_argument("-d", "--data-dir", help="Directory of LinkML YAML data files. These are NOT schemas!")
     parser.add_argument("-g", "--generate-data", help="Boolean option to generate data files from the schema.")
     args = parser.parse_args()
@@ -42,8 +43,9 @@ def main():
 
     # Run
     map_schema(args.yaml_schema_path, args.generate_data)
-    if args.data_dir is not None:
-        map_data(args.yaml_schema_path, args.data_dir)
+    # TODO: LinkML data mapping incomplete, see map_data() below
+    # if args.data_dir is not None:
+    #     map_data(args.yaml_schema_path, args.data_dir)
 
 
 def class2table_row(class_name: str, class_description: str, table_dir: str):
@@ -127,10 +129,9 @@ def slot2datatype_row(slot_name: str, slot_description, slot_pattern: str, slot_
         "HTML type": None, # TODO
     }
 
-def map_schema(yaml_schema_path: str, generate_data: bool = False):
-    valve_dir = os.path.dirname(yaml_schema_path)
+def map_schema(yaml_schema_path: str, output_dir: str, generate_data: bool = False):
     # Data tables go in a subdirectory of the schema directory by default
-    data_table_dir = os.path.join(valve_dir, "data")
+    data_table_dir = os.path.join(output_dir, "data")
 
     linkml_schema = SchemaView(yaml_schema_path)
     
@@ -165,12 +166,12 @@ def map_schema(yaml_schema_path: str, generate_data: bool = False):
 
     # Map enums
     for enum in all_enums:
-        map_enum(enum, column_dicts, datatype_dicts, table_dicts, valve_dir)
+        map_enum(enum, column_dicts, datatype_dicts, table_dicts, output_dir)
 
     # Serialize to VALVE TSVs
-    write_dicts2tsv(valve_dir + '/table.tsv', table_dicts, VALVE_SCHEMA["table"]["headers"])
-    write_dicts2tsv(valve_dir + '/column.tsv', column_dicts, VALVE_SCHEMA["column"]["headers"])
-    write_dicts2tsv(valve_dir + '/datatype.tsv', datatype_dicts, VALVE_SCHEMA["datatype"]["headers"])
+    write_dicts2tsv(output_dir + '/table.tsv', table_dicts, VALVE_SCHEMA["table"]["headers"])
+    write_dicts2tsv(output_dir + '/column.tsv', column_dicts, VALVE_SCHEMA["column"]["headers"])
+    write_dicts2tsv(output_dir + '/datatype.tsv', datatype_dicts, VALVE_SCHEMA["datatype"]["headers"])
 
     # Create the actual data table files with some generated data
     if generate_data:
