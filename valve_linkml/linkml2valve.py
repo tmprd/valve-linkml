@@ -155,8 +155,7 @@ def map_schema(yaml_schema_path: str):
             attribute_slot = next((s for s in all_slots if s.name == attribute), None)
             map_class_slot(linkml_schema, attribute_slot, linkml_class, column_dicts, datatype_dicts, all_classes)
 
-    # Map enums to Datatype table
-    # TODO: Map enums to Table table, with a Permissible Value column and IRI/meaning column
+    # Map enums
     for enum in all_enums:
         map_enum(enum, column_dicts, datatype_dicts, table_dicts, valve_dir)
 
@@ -216,21 +215,23 @@ def map_enum(enum: EnumDefinition, column_dicts: List[dict], datatype_dicts: Lis
      # Map permissible enum values to "condition" in Datatype table
     datatype_dicts.append(slot2datatype_row(enum.name, enum.description, None, enum.permissible_values))
 
-    # TODO designate enum table "type" as "enum table" ?
+    # TODO: Map enums to Table table, with a Permissible Value column and IRI/meaning column
+    # TODO: designate enum table "type" as "enum table" ?
     # table_dicts.append(class2table(enum.name, enum.description, valve_dir))
     # column_dicts.append(slot2column("permissible_value", enum.name, "Permissible Value", None, None, False))
     # column_dicts.append(slot2column("meaning", enum.name, "IRI Meaning", None, None, False))
 
-    # TODO actually create the enum table with permissible values + IRIs as rows
+    # TODO: actually create the enum table with permissible values + IRIs as rows
 
 
 def map_data(yaml_schema_path: str, yaml_data_dir: str):
     for file in os.listdir(yaml_data_dir):
         if not file.endswith(".yaml"): continue
-        # TODO: this LinkML function should be available as undecorated to call programatically
-        linkml.utils.converter.cli.callback(input=file, schema=yaml_schema_path, output_format='tsv', module=None, target_class=None)
-
-
+        # `linkml-convert -t tsv --index-slot persons -o test/linkml2valve/data/personinfo_data_valid.tsv -s test/linkml2valve/schema/personinfo.yaml test/linkml2valve/data/personinfo_data_valid.yaml`
+        # Problem: this LinkML function should be available as undecorated to call programatically
+        # Problem: this LinkML function fails to convert if the data is invalid
+        # Problem: need to know "index-slot" of the data for outputting TSVs
+        linkml.utils.converter.cli.callback(input=os.path.join(yaml_data_dir, file), schema=yaml_schema_path, output_format="tsv", module=None, target_class=None)
 
 def get_inherited_class_slots(schemaView: SchemaView, linkml_class: ClassDefinition) -> List[SlotDefinition]:
     """Get only slots of this class that are inherited from some ancestor class, so we can track these separately from the non-inherited slots/attributes"""

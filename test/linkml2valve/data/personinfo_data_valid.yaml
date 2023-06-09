@@ -3,6 +3,9 @@ persons:
     name: fred bloggs
     primary_email: fred.bloggs@example.com
     age_in_years: 33
+    current_address: 
+      street: 2 foo street
+      city: foo city
   - id: P:002
     name: joe schmoe
     primary_email: joe.schmoe@example.com
@@ -22,9 +25,9 @@ persons:
         procedure:
           id: CODE:P0001
           name: trepanation
-#    current_address:
-#      street: 1 foo street
-#      city: foo city
+    current_address:
+      street: 1 foo street
+      city: foo city
 organizations:
   - id: ROR:1
     name: foo
