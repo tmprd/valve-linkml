@@ -11,5 +11,5 @@ python3 -m test.test_linkml2valve
 
 ### Test validation
 ```shell
-linkml-validate -f tsv -s test/linkml2valve/linkml/personinfo.yaml --index-slot whatever test/linkml2valve/valve/data/Person.tsv
+linkml-validate -f tsv -s test/linkml2valve/linkml/personinfo.yaml --index-slot=id test/linkml2valve/valve/data/Person.tsv
 ```

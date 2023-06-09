@@ -61,7 +61,9 @@ def map_fhirpatient2person(fhir_patient: dict):
         "id": fhir_patient["Id"],
         "birth_date": fhir_patient["BIRTHDATE"],
         "name": f'{fhir_patient["FIRST"]} {fhir_patient["LAST"]}',
-        "gender": fhir_patient["GENDER"]
+        "gender": fhir_patient["GENDER"],
+        # TODO create address ID? Need to add to Address schema too
+        "current_address": fhir_patient["ADDRESS"],
     }
 
 def map_fhirpatient2address(fhir_patient: dict):
