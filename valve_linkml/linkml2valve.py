@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import os
 import csv
 import logging
@@ -6,6 +7,8 @@ from argparse import ArgumentParser
 
 from linkml_runtime.utils.schemaview import SchemaView, SlotDefinition, ClassDefinition, ClassDefinitionName, EnumDefinition
 import linkml.utils.converter
+
+from .data_generator import generate_schema_data
 
 """Usage: python3 -m valve_linkml.linkml2valve <linkml-yaml-schema-path> -d <linkml-yaml-data-directory>"""
 
@@ -31,22 +34,23 @@ def main():
     parser = ArgumentParser()
     parser.add_argument('yaml_schema_path', type=str)
     parser.add_argument("-d", "--data-dir", help="Directory of LinkML YAML data files. These are NOT schemas!")
+    parser.add_argument("-g", "--generate-data", help="Boolean option to generate data files from the schema.")
     args = parser.parse_args()
 
     # Logging
     LOGGER.setLevel(level=logging.WARNING)
 
     # Run
-    map_schema(args.yaml_schema_path)
-    if args.data_dir:
+    map_schema(args.yaml_schema_path, args.generate_data)
+    if args.data_dir is not None:
         map_data(args.yaml_schema_path, args.data_dir)
 
 
-def class2table_row(class_name: str, class_description: str, table_path: str):
+def class2table_row(class_name: str, class_description: str, table_dir: str):
     # A class is a Table row
     return {
         "table": class_name,
-        "path": f'{table_path}/{class_name}.tsv',
+        "path": f'{table_dir}/{class_name}.tsv',
         "description": class_description,
         "type": None,
     }
@@ -101,6 +105,7 @@ def slot2column_structure(slot_range_name: str, slot_range_identifier_name: str,
         return 'primary'
     elif (slot_range_name is not None) and is_slot_range_a_class: #and (slot_range_identifier_name is not None):
         # from() represents a foreign key constraint. The foreign key table is the class, the foreign key column is the identifier for that class.
+        # TODO: if the range class doesn't have an identifier, we'll need to create one and also generate identifier values for its data
         return f'from({slot_range_name}.{slot_range_identifier_name or "?"})'
     else:
         return None
@@ -122,14 +127,17 @@ def slot2datatype_row(slot_name: str, slot_description, slot_pattern: str, slot_
         "HTML type": None, # TODO
     }
 
-def map_schema(yaml_schema_path: str):
+def map_schema(yaml_schema_path: str, generate_data: bool = False):
     valve_dir = os.path.dirname(yaml_schema_path)
+    # Data tables go in a subdirectory of the schema directory by default
+    data_table_dir = os.path.join(valve_dir, "data")
+
     linkml_schema = SchemaView(yaml_schema_path)
     
     all_classes = linkml_schema.all_classes().values()
     all_slots = linkml_schema.all_slots().values()
     all_enums = linkml_schema.all_enums().values()
-
+    
     validate_schema(all_classes, all_slots, all_enums)
 
     table_dicts = []
@@ -138,7 +146,7 @@ def map_schema(yaml_schema_path: str):
 
     # Map classes to Table table
     for linkml_class in all_classes:
-        table_dicts.append(class2table_row(linkml_class.name, linkml_class.description, valve_dir))
+        table_dicts.append(class2table_row(linkml_class.name, linkml_class.description, data_table_dir))
 
         # Map slots of (transitively) inherited classes to additional columns for this class in the Column table (note: these may include slots/attributes inherited from "mixins")
         inherited_slots = get_inherited_class_slots(linkml_schema, linkml_class)
@@ -160,9 +168,14 @@ def map_schema(yaml_schema_path: str):
         map_enum(enum, column_dicts, datatype_dicts, table_dicts, valve_dir)
 
     # Serialize to VALVE TSVs
-    write_dicts2tsv(valve_dir + '/column.tsv', column_dicts, VALVE_SCHEMA["column"]["headers"])
     write_dicts2tsv(valve_dir + '/table.tsv', table_dicts, VALVE_SCHEMA["table"]["headers"])
+    write_dicts2tsv(valve_dir + '/column.tsv', column_dicts, VALVE_SCHEMA["column"]["headers"])
     write_dicts2tsv(valve_dir + '/datatype.tsv', datatype_dicts, VALVE_SCHEMA["datatype"]["headers"])
+
+    # Create the actual data table files with some generated data
+    if generate_data:
+        generate_schema_data(table_dicts, column_dicts)
+
 
 def map_class_slot(schemaView: SchemaView, slot: SlotDefinition, slot_class: ClassDefinition, 
                    column_dicts: List[dict], datatype_dicts: List[dict],
@@ -175,7 +188,7 @@ def map_class_slot(schemaView: SchemaView, slot: SlotDefinition, slot_class: Cla
     # Map class-specific slot_usage to a new Datatype row
     slot_usage = slot_class.slot_usage.get(slot.name)
     slot_usage_datatype = None
-    if slot_usage:
+    if slot_usage is not None:
         # Create a new Datatype for this slot usage and set that as the "datatype" in the Column table.
         ### Example: "primary_email" in Person uses a "person_primary_email" datatype
         slot_usage_datatype = f"{slot_class.name.lower()}_{slot_usage.name}"
@@ -184,11 +197,11 @@ def map_class_slot(schemaView: SchemaView, slot: SlotDefinition, slot_class: Cla
         # If slot usage is required, then the slot is required in the context of this class
         is_slot_required = slot_usage.required
 
-    # If this slot's range is a class, then we need that class's identifier (slot)... so we need all the slots of THAT class
+    # If this slot's range is a class, then we need that class's identifier (slot), and its datatype
     range_class = next((c for c in all_classes if c.name == slot.range), None)
     range_class_identifier_name = None
     range_class_identifier_datatype = None
-    if range_class:
+    if range_class is not None:
         is_slot_range_a_class = True
         # TODO: Get other imported identifiers from, e.g. Address's class_uri: schema:PostalAddress
         range_class_identifier = get_identifier_or_key_slot(schemaView, range_class.name)
@@ -196,8 +209,7 @@ def map_class_slot(schemaView: SchemaView, slot: SlotDefinition, slot_class: Cla
             range_class_identifier_name = range_class_identifier.name
             # TODO: Does this identifier have a slot_usage?
             slot_range_class_identifier_usage_datatype = None
-            # Finally get the datatype
-            # Note: the range of the class identifier will be the "default_range" in the schema if not specified otherwise
+            # Finally get the datatype. Note: the range of the class identifier will be the "default_range" in the schema if not specified otherwise
             range_class_identifier_datatype = slot2column_datatype(slot_range_class_identifier_usage_datatype, range_class_identifier.range, False, None)
 
     column_dicts.append(slot2column_row(slot.name, 
@@ -233,6 +245,9 @@ def map_data(yaml_schema_path: str, yaml_data_dir: str):
         # Problem: need to know "index-slot" of the data for outputting TSVs
         linkml.utils.converter.cli.callback(input=os.path.join(yaml_data_dir, file), schema=yaml_schema_path, output_format="tsv", module=None, target_class=None)
 
+        # TODO TSV table name should be the class name
+        # TODO should include a column for all class slots, even if the instance doesn't have values for those slots?
+
 def get_inherited_class_slots(schemaView: SchemaView, linkml_class: ClassDefinition) -> List[SlotDefinition]:
     """Get only slots of this class that are inherited from some ancestor class, so we can track these separately from the non-inherited slots/attributes"""
     return [slot for slot in schemaView.class_induced_slots(linkml_class.name) if (slot.name not in linkml_class.slots) and (slot.name not in linkml_class.attributes)]
@@ -260,6 +275,9 @@ def write_dicts2tsv(filepath: str, rendered_data: list, headers: list) -> str:
     print(f"Wrote to '{filepath}'")
 
 def validate_schema(classes: List[ClassDefinition], slots: List[SlotDefinition], enums: List[EnumDefinition]):
+    LOGGER.info(f'{len(classes)} classes in schema')
+    LOGGER.info(f'{len(slots)} slots in schema')
+    LOGGER.info(f'{len(enums)} enums in schema')
     # Check for slots not associated to a class
     class_slots = [slot for c in classes for slot in c.slots] + [slot for c in classes for slot in c.attributes]
     classless_slots = [s.name for s in slots if s.name not in class_slots]

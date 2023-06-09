@@ -5,3 +5,4 @@ __pycache__
 build
 launch.json
 .DS_Store
+notes/
