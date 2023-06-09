@@ -1,0 +1,8 @@
+datatype	parent	transform	condition	structure	description	SQLite type	PostgreSQL type	RDF type	HTML type
+person_primary_email			match(/^\S+@[\S+\.]+\S+/)						
+person_age_in_years									
+familialrelationship_related_to									
+familialrelationship_type									
+FamilialRelationshipType			in('SIBLING_OF','PARENT_OF','CHILD_OF')						
+GenderType			in('nonbinary man','nonbinary woman','transgender woman','transgender man','cisgender man','cisgender woman')						
+DiagnosisType									

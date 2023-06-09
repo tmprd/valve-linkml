@@ -1,0 +1,17 @@
+table	path	description	type
+NamedThing	test/linkml2valve/schema/NamedThing.tsv	A generic grouping for any identifiable entity	
+Person	test/linkml2valve/schema/Person.tsv	A person (alive, dead, undead, or fictional).	
+HasAliases	test/linkml2valve/schema/HasAliases.tsv	A mixin applied to any class that can have aliases/alternateNames	
+Organization	test/linkml2valve/schema/Organization.tsv	An organization such as a company or university	
+Place	test/linkml2valve/schema/Place.tsv		
+Address	test/linkml2valve/schema/Address.tsv		
+Event	test/linkml2valve/schema/Event.tsv		
+Concept	test/linkml2valve/schema/Concept.tsv		
+DiagnosisConcept	test/linkml2valve/schema/DiagnosisConcept.tsv		
+ProcedureConcept	test/linkml2valve/schema/ProcedureConcept.tsv		
+Relationship	test/linkml2valve/schema/Relationship.tsv		
+FamilialRelationship	test/linkml2valve/schema/FamilialRelationship.tsv		
+EmploymentEvent	test/linkml2valve/schema/EmploymentEvent.tsv		
+MedicalEvent	test/linkml2valve/schema/MedicalEvent.tsv		
+WithLocation	test/linkml2valve/schema/WithLocation.tsv		
+Container	test/linkml2valve/schema/Container.tsv		
