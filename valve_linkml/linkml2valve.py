@@ -31,6 +31,9 @@ VALVE_SCHEMA = {
 DEFAULT_DATATYPE = 'text'
 DEFAULT_PARENT_DATATYPE = DEFAULT_DATATYPE
 
+DEFAULT_PRIMARY_KEY = 'id'
+DEFAULT_PRIMARY_KEY_DATATYPE = DEFAULT_DATATYPE
+
 def main():
     # CLI
     parser = ArgumentParser()
@@ -124,7 +127,7 @@ def slot2datatype_row(slot_name: str, slot_description, slot_pattern: str, slot_
         # A slot's pattern, or the permissible values of a slot's enum, maps to a Datatype "condition"
         "condition": (f"match(/{slot_pattern}/)" if slot_pattern else None) or (f"in({format_enum_str(slot_enum_values)})" if slot_enum_values else None),
         "structure": None, 
-        "description": slot_description,
+        "description": slot_description or f"This is a {slot_name}", # default to name if no description
         "SQLite type": None, # TODO
         "PostgreSQL type": None, # TODO
         "RDF type": None, # TODO
@@ -151,7 +154,7 @@ def map_schema(yaml_schema_path: str, output_dir: str, generate_data: bool = Fal
     for linkml_class in all_classes:
         table_dicts.append(class2table_row(linkml_class.name, linkml_class.description, data_table_dir))
 
-        # Map slots of (transitively) inherited classes to additional columns for this class in the Column table (note: these may include slots/attributes inherited from "mixins")
+        # Map slots of (transitively) inherited classes to additional columns for this class in the Column table. (Note: these include slots/attributes inherited from "mixins".)
         inherited_slots = get_inherited_class_slots(linkml_schema, linkml_class)
         for inherited_slot in inherited_slots:
             map_class_slot(linkml_schema, inherited_slot, linkml_class, column_dicts, datatype_dicts, all_classes, all_enums)
@@ -166,6 +169,13 @@ def map_schema(yaml_schema_path: str, output_dir: str, generate_data: bool = Fal
             attribute_slot = next((s for s in all_slots if s.name == attribute), None)
             map_class_slot(linkml_schema, attribute_slot, linkml_class, column_dicts, datatype_dicts, all_classes, all_enums)
 
+        # If no identifier slot was found and used as a primary key, we need to make one for this class and add it to the Column table
+        class_primary_key = next((c for c in column_dicts if c["table"] == linkml_class.name and c["structure"] == "primary"), None)
+        if class_primary_key is None:
+            LOGGER.warning(f"Class '{linkml_class.name}' has no identifier slot. Creating primary key '{DEFAULT_PRIMARY_KEY}' and adding it to the Column table.")
+            # TODO: maybe add this as the first column...
+            column_dicts.append(slot2column_row(DEFAULT_PRIMARY_KEY, linkml_class.name, "generated column", None, None, None, None, is_slot_range_a_class=False, is_primary_key=True, is_required=True))
+
     # Map enums
     for enum in all_enums:
         map_enum(enum, column_dicts, datatype_dicts, table_dicts, output_dir)
@@ -178,7 +188,13 @@ def map_schema(yaml_schema_path: str, output_dir: str, generate_data: bool = Fal
     # VALVE schema tables should include the base metadata rows
     all_table_dicts = init_valve_table("test/valve2linkml/valve/table.tsv", VALVE_SCHEMA, lambda row: map_table_path(row, output_dir)) + table_dicts
     all_column_dicts = init_valve_table("test/valve2linkml/valve/column.tsv", VALVE_SCHEMA) + column_dicts
-    all_datatype_dicts = init_valve_table("test/valve2linkml/valve/datatype.tsv", None) + datatype_dicts
+    all_datatype_dicts = init_valve_table("test/valve2linkml/valve/datatype.tsv", None)
+    # Choose VALVE metadata datatypes over duplicately named LinkML datatypes
+    for d in datatype_dicts:
+        if d["datatype"] not in [v["datatype"] for v in all_datatype_dicts]:
+            all_datatype_dicts.append(d)
+        else:
+            LOGGER.warning(f"VALVE datatype {d['datatype']} already exists. Skipping.")
     
     # Serialize to VALVE TSVs
     write_dicts2tsv(output_dir + '/table.tsv', all_table_dicts, VALVE_SCHEMA["table"]["headers"])
@@ -226,8 +242,12 @@ def map_class_slot(schemaView: SchemaView, slot: SlotDefinition, slot_class: Cla
             slot_range_class_identifier_usage_datatype = None
             # Finally get the datatype. Note: the range of the class identifier will be the "default_range" in the schema if not specified otherwise
             range_class_identifier_datatype = slot2column_datatype(slot_range_class_identifier_usage_datatype, range_class_identifier.range, False, None)
+        else:
+            LOGGER.warning(f"Slot '{slot.name}' has range '{range_class.name}', but '{range_class.name}' has no identifier. Using {range_class.name}.{DEFAULT_PRIMARY_KEY} as the foreign key.")
+            range_class_identifier_name = DEFAULT_PRIMARY_KEY
+            range_class_identifier_datatype = DEFAULT_PRIMARY_KEY_DATATYPE
 
-    # Map slot range to a datatype only if it's not a class or enum, and we haven't already added it from a slot_usage
+    # Map slot range to a datatype only if it's not a class or enum, and we haven't already added it from somewhere else (ex. slot usage)
     is_slot_range_an_enum = slot.range in [e.name for e in all_enums]
     if (slot.range is not None) and (not is_slot_range_a_class) and (not is_slot_range_an_enum) and (not slot.range in [d["datatype"] for d in datatype_dicts]):
         datatype_dicts.append(slot2datatype_row(slot.range, None, None, None))
@@ -256,7 +276,7 @@ def map_enum(enum: EnumDefinition, column_dicts: List[dict], datatype_dicts: Lis
     # column_dicts.append(slot2column_row("meaning", enum.name, "IRI Meaning", None, None, None, None, False, False, is_required=True))
 
     # Need to create a primary key so these permissible values can serve as foreign
-    # column_dicts.append(slot2column_row("id", enum.name, None, None, None, None, None, None, is_primary_key=True, is_required=True))
+    # column_dicts.append(slot2column_row(DEFAULT_PRIMARY_KEY, enum.name, None, None, None, None, None, None, is_primary_key=True, is_required=True))
 
     # TODO: actually create the enum table with permissible values + IRIs as rows
 
