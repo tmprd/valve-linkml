@@ -143,10 +143,9 @@ def map_schema(yaml_schema_path: str, output_dir: str, generate_data: bool = Fal
     
     validate_schema(all_classes, all_slots, all_enums)
 
-    # VALVE schema tables should include the base metadata rows
-    table_dicts = init_valve_table("test/valve2linkml/valve/table.tsv", VALVE_SCHEMA, lambda row: map_table_path(row, output_dir))
-    column_dicts = init_valve_table("test/valve2linkml/valve/column.tsv", VALVE_SCHEMA)
-    datatype_dicts = init_valve_table("test/valve2linkml/valve/datatype.tsv", None)
+    table_dicts = []
+    column_dicts = []
+    datatype_dicts = []
 
     # Map classes to Table table
     for linkml_class in all_classes:
@@ -176,12 +175,17 @@ def map_schema(yaml_schema_path: str, output_dir: str, generate_data: bool = Fal
     if not default_range in [d["datatype"] for d in datatype_dicts]:
         datatype_dicts.append(slot2datatype_row(default_range, None, None))
 
+    # VALVE schema tables should include the base metadata rows
+    all_table_dicts = init_valve_table("test/valve2linkml/valve/table.tsv", VALVE_SCHEMA, lambda row: map_table_path(row, output_dir)) + table_dicts
+    all_column_dicts = init_valve_table("test/valve2linkml/valve/column.tsv", VALVE_SCHEMA) + column_dicts
+    all_datatype_dicts = init_valve_table("test/valve2linkml/valve/datatype.tsv", None) + datatype_dicts
+    
     # Serialize to VALVE TSVs
-    write_dicts2tsv(output_dir + '/table.tsv', table_dicts, VALVE_SCHEMA["table"]["headers"])
-    write_dicts2tsv(output_dir + '/column.tsv', column_dicts, VALVE_SCHEMA["column"]["headers"])
-    write_dicts2tsv(output_dir + '/datatype.tsv', datatype_dicts, VALVE_SCHEMA["datatype"]["headers"])
+    write_dicts2tsv(output_dir + '/table.tsv', all_table_dicts, VALVE_SCHEMA["table"]["headers"])
+    write_dicts2tsv(output_dir + '/column.tsv', all_column_dicts, VALVE_SCHEMA["column"]["headers"])
+    write_dicts2tsv(output_dir + '/datatype.tsv', all_datatype_dicts, VALVE_SCHEMA["datatype"]["headers"])
 
-    # Create the actual data table files with some generated data
+    # Create the actual data table files with some generated data (exclude meta tables)
     if generate_data:
         generate_schema_data(table_dicts, column_dicts)
 
@@ -200,7 +204,6 @@ def map_class_slot(schemaView: SchemaView, slot: SlotDefinition, slot_class: Cla
     if slot_usage is not None:
         # If the slot_usage is an Enum, save it for later when adding all Enums
         slot_usage_enum = next((e for e in all_enums if e.name == slot_usage.range), None)
-        if slot_usage_enum: print(slot_usage_enum.name)
         if slot_usage_enum is None:
             # Create a new Datatype for this slot usage. Then set that as the "datatype" in the Column table.
             slot_usage_datatype = f"{slot_class.name.lower()}_{slot_usage.name}"
@@ -242,15 +245,18 @@ def map_class_slot(schemaView: SchemaView, slot: SlotDefinition, slot_class: Cla
                                         is_slot_required))
 
 def map_enum(enum: EnumDefinition, column_dicts: List[dict], datatype_dicts: List[dict], table_dicts: List[dict], valve_dir: str):
-    # Map permissible enum values to "condition" in Datatype table if needed
+    # Map permissible enum values to "condition" in Datatype table
     datatype_dicts.append(slot2datatype_row(enum.name, enum.description, None, enum.permissible_values))
 
     # Map enum to Table table, with a Permissible Value column and IRI/meaning column
     # table_dicts.append(class2table_row(enum.name, enum.description, valve_dir))
 
     # TODO: designate enum table "type" as "enum table" ?
-    # column_dicts.append(slot2column_row("permissible_value", enum.name, "Permissible Value", None, None, False))
-    # column_dicts.append(slot2column_row("meaning", enum.name, "IRI Meaning", None, None, False))
+    # column_dicts.append(slot2column_row("permissible_value", enum.name, "Permissible Value", None, None, None, None, False, False, is_required=True))
+    # column_dicts.append(slot2column_row("meaning", enum.name, "IRI Meaning", None, None, None, None, False, False, is_required=True))
+
+    # Need to create a primary key so these permissible values can serve as foreign
+    # column_dicts.append(slot2column_row("id", enum.name, None, None, None, None, None, None, is_primary_key=True, is_required=True))
 
     # TODO: actually create the enum table with permissible values + IRIs as rows
 
