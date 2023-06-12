@@ -3,6 +3,8 @@ import os
 import csv
 from typing import List
 
+from .generate_from_fhir import generate_tables_from_fhir_mapping
+
 def generate_schema_data(table_dicts: List[dict], column_dicts: List[dict]):
     print("Generating data tables...")
 
@@ -38,44 +40,6 @@ def generate_schema_data(table_dicts: List[dict], column_dicts: List[dict]):
 
             # Experimental generation
             # create_generation_prompt(table_name, table_columns)
-
-
-def generate_tables_from_fhir_mapping() -> dict:
-    # Read the pre-generated data
-    TEST_PATIENT_DATA_FILE_PATH = "test/linkml2valve/synthea/patients.csv"
-    with open(TEST_PATIENT_DATA_FILE_PATH, "r") as synthea_patients_file:
-        reader = csv.DictReader(synthea_patients_file, delimiter=",")
-        # Map the columns we want
-        person_dicts = []
-        address_dicts = []
-        for patient_row in reader:
-            person_dicts.append(map_fhirpatient2person(patient_row))
-            address_dicts.append(map_fhirpatient2address(patient_row))
-        return {"Person":person_dicts, "Address":address_dicts}
-
-
-def map_fhirpatient2person(fhir_patient: dict):
-    # person_columns = ['Id', 'BIRTHDATE', 'FIRST', 'LAST', 'GENDER']
-    # aliases	id	name	description	image	primary_email	birth_date	age_in_years	gender	current_address	has_employment_history	has_familial_relationships	has_medical_history
-    return {
-        "id": fhir_patient["Id"],
-        "birth_date": fhir_patient["BIRTHDATE"],
-        "name": f'{fhir_patient["FIRST"]} {fhir_patient["LAST"]}',
-        "gender": fhir_patient["GENDER"],
-        # TODO create address ID? Need to add to Address schema too
-        "current_address": fhir_patient["ADDRESS"],
-    }
-
-def map_fhirpatient2address(fhir_patient: dict):
-    # address_columns = ['ADDRESS', 'CITY', 'STATE', 'ZIP']
-    # street	city	postal_code
-    return {
-        "street": fhir_patient["ADDRESS"],
-        "city": fhir_patient["CITY"],
-        "postal_code": fhir_patient["ZIP"]
-    }
-
-
 
 def create_generation_prompt(table_name: str, table_column_dicts: List[str]):
     """Warning: experimental! This just creates a prompt and doesn't do anything with it."""

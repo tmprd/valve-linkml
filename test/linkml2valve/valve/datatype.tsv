@@ -22,6 +22,7 @@ word	nonspace		exclude(/\W/)		a single word: letters, numbers, underscore
 string	text								
 person_primary_email	text		match(/^\S+@[\S+\.]+\S+/)						
 person_age_in_years	text								
+integer	text								
 date	text								
 float	text								
 boolean	text								
