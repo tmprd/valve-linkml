@@ -1,4 +1,7 @@
 table	path	description	type
+column	test/linkml2valve/valve/column.tsv	Columns for all of the tables.	column
+datatype	test/linkml2valve/valve/datatype.tsv	Datatypes for all of the columns	datatype
+table	test/linkml2valve/valve/table.tsv	All of the user-editable tables in this project.	table
 NamedThing	test/linkml2valve/valve/data/NamedThing.tsv	A generic grouping for any identifiable entity	
 Person	test/linkml2valve/valve/data/Person.tsv	A person (alive, dead, undead, or fictional).	
 HasAliases	test/linkml2valve/valve/data/HasAliases.tsv	A mixin applied to any class that can have aliases/alternateNames	
