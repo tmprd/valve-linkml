@@ -142,9 +142,9 @@ def map_schema(yaml_schema_path: str, output_dir: str, generate_data: bool = Fal
     validate_schema(all_classes, all_slots, all_enums)
 
     # VALVE schema tables should include the base metadata rows
-    table_dicts = init_valve_table("test/valve2linkml/valve/table.tsv", lambda row: map_table_path(row, output_dir), VALVE_SCHEMA)
-    column_dicts = init_valve_table("test/valve2linkml/valve/column.tsv", None, VALVE_SCHEMA)
-    datatype_dicts = init_valve_table("test/valve2linkml/valve/datatype.tsv", None, None)
+    table_dicts = init_valve_table("test/valve2linkml/valve/table.tsv", VALVE_SCHEMA, lambda row: map_table_path(row, output_dir))
+    column_dicts = init_valve_table("test/valve2linkml/valve/column.tsv", VALVE_SCHEMA)
+    datatype_dicts = init_valve_table("test/valve2linkml/valve/datatype.tsv", None)
 
     # Map classes to Table table
     for linkml_class in all_classes:
@@ -169,6 +169,11 @@ def map_schema(yaml_schema_path: str, output_dir: str, generate_data: bool = Fal
     for enum in all_enums:
         map_enum(enum, column_dicts, datatype_dicts, table_dicts, output_dir)
 
+    # Add "default_range" as a datatype
+    default_range = linkml_schema.schema.default_range
+    if not default_range in [d["datatype"] for d in datatype_dicts]:
+        datatype_dicts.append(slot2datatype_row(default_range, None, None))
+
     # Serialize to VALVE TSVs
     write_dicts2tsv(output_dir + '/table.tsv', table_dicts, VALVE_SCHEMA["table"]["headers"])
     write_dicts2tsv(output_dir + '/column.tsv', column_dicts, VALVE_SCHEMA["column"]["headers"])
@@ -177,17 +182,6 @@ def map_schema(yaml_schema_path: str, output_dir: str, generate_data: bool = Fal
     # Create the actual data table files with some generated data
     if generate_data:
         generate_schema_data(table_dicts, column_dicts)
-
-
-def init_valve_table(valve_tsv_path: str, map_valve_row: Callable, column_filter: dict):
-    # TODO: Use VALVE lib to get metadata tables instead of a sample schema
-    with open(valve_tsv_path, 'r') as table_file:
-        reader = csv.DictReader(table_file, delimiter='\t')
-        return [(map_valve_row(row) if map_valve_row else row) for row in reader if (not column_filter) or (row.get("table") in column_filter)]
-
-def map_table_path(row: dict, output_dir: str):
-    # Returns copy of row with "path" modified
-    return dict(row, path=os.path.join(output_dir, row.get("table") + ".tsv"))
 
 def map_class_slot(schemaView: SchemaView, slot: SlotDefinition, slot_class: ClassDefinition, 
                    column_dicts: List[dict], datatype_dicts: List[dict],
@@ -296,6 +290,15 @@ def validate_schema(classes: List[ClassDefinition], slots: List[SlotDefinition],
     if classless_slots:
         LOGGER.warning(f"Slots not associated to a class won't be mapped: {', '.join(classless_slots)}")
 
+def init_valve_table(valve_tsv_path: str, column_filter: dict, map_valve_row: Callable = lambda row: row):
+    # TODO: Use VALVE lib to get metadata tables instead of a sample schema
+    with open(valve_tsv_path, 'r') as table_file:
+        reader = csv.DictReader(table_file, delimiter='\t')
+        return [map_valve_row(row) for row in reader if (not column_filter) or (row.get("table") in column_filter)]
+
+def map_table_path(row: dict, output_dir: str):
+    # Returns copy of row with "path" modified
+    return dict(row, path=os.path.join(output_dir, row.get("table") + ".tsv"))
 
 if __name__ == "__main__":
     main()
