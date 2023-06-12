@@ -25,10 +25,10 @@ Person	primary_email	empty	person_primary_email
 Person	birth_date	empty	text		
 Person	age_in_years	empty	person_age_in_years		
 Person	gender	empty	GenderType		
-Person	current_address	empty	text	from(Address.?)	The address at which a person currently lives
-Person	has_employment_history	empty	text	from(EmploymentEvent.?)	
-Person	has_familial_relationships	empty	text	from(FamilialRelationship.?)	
-Person	has_medical_history	empty	text	from(MedicalEvent.?)	
+Person	current_address	empty	text		The address at which a person currently lives
+Person	has_employment_history	empty	text		
+Person	has_familial_relationships	empty	text		
+Person	has_medical_history	empty	text		
 HasAliases	aliases	empty	text		
 Organization	aliases	empty	string		
 Organization	id		string	primary	
@@ -67,7 +67,7 @@ Relationship	type	empty	text
 FamilialRelationship	started_at_time	empty	date		
 FamilialRelationship	ended_at_time	empty	date		
 FamilialRelationship	related_to		familialrelationship_related_to	from(Person.id)	
-FamilialRelationship	type		familialrelationship_type		
+FamilialRelationship	type		FamilialRelationshipType		
 EmploymentEvent	started_at_time	empty	date		
 EmploymentEvent	ended_at_time	empty	date		
 EmploymentEvent	duration	empty	float		
