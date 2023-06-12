@@ -1,5 +1,6 @@
 import csv
 import random
+from datetime import date, datetime
 
 def generate_tables_from_fhir_mapping() -> dict:
     # Read the pre-generated data
@@ -13,8 +14,9 @@ def generate_tables_from_fhir_mapping() -> dict:
         medicalevents_dicts = []
         procedure_dicts = []
         for patient_row in patients:
-            person_dicts.append(map_fhir_patient2person(patient_row))
-            address_dicts.append(map_fhir_patient2address(patient_row))
+            person_address = map_fhir_patient2address(patient_row)
+            address_dicts.append(person_address)
+            person_dicts.append(map_fhir_patient2person(patient_row, person_address))
 
         procedures = csv.DictReader(procedures_file, delimiter=",")
         unique_procedures = list({procedure["CODE"]: procedure for procedure in procedures}.values())
@@ -22,24 +24,25 @@ def generate_tables_from_fhir_mapping() -> dict:
             procedure_dicts.append(map_fhir_procedure2procedure_concept(p))
 
         encounters = csv.DictReader(encounters_file, delimiter=",")
-        procedures_list = list(unique_procedures)
         for e in encounters:
-            procedure = random.choice(procedures_list)
+            procedure = random.choice(unique_procedures)
             medicalevents_dicts.append(map_fhir_encounter2medical_event(e, procedure["CODE"]))
 
         return {"Person":person_dicts, "Address":address_dicts, "MedicalEvent": medicalevents_dicts, "ProcedureConcept": procedure_dicts}
     
 
-def map_fhir_patient2person(fhir_patient: dict):
+def map_fhir_patient2person(fhir_patient: dict, person_address: dict):
+    """Depends on a mapped person address id because of foreign key"""
     # person_columns = ['Id', 'BIRTHDATE', 'FIRST', 'LAST', 'GENDER']
     # aliases	id	name	description	image	primary_email	birth_date	age_in_years	gender	current_address	has_employment_history	has_familial_relationships	has_medical_history
     return {
         "id": fhir_patient["Id"],
         "birth_date": fhir_patient["BIRTHDATE"],
+        "age_in_years": calculate_age(datetime.strptime(fhir_patient["BIRTHDATE"], "%Y-%m-%d")),
         "name": f'{fhir_patient["FIRST"]} {fhir_patient["LAST"]}',
-        "gender": fhir_patient["GENDER"],
+        "gender": random.choice(['cisgender woman', 'nonbinary woman', 'transgender woman']) if (fhir_patient["GENDER"] == "F") else random.choice(['cisgender man', 'nonbinary man', 'transgender man']),
         # TODO create address ID foreign key? Need to add to Address schema too
-        "current_address": fhir_patient["ADDRESS"],
+        "current_address": person_address["id"]
     }
 
 def map_fhir_patient2address(fhir_patient: dict):
@@ -48,7 +51,8 @@ def map_fhir_patient2address(fhir_patient: dict):
     return {
         "street": fhir_patient["ADDRESS"],
         "city": fhir_patient["CITY"],
-        "postal_code": fhir_patient["ZIP"]
+        "postal_code": fhir_patient["ZIP"],
+        "id": random.randint(0, 1000000) # generated ID
     }
 
 def map_fhir_encounter2medical_event(fhir_encounter: dict, procedure_code: str):
@@ -57,7 +61,11 @@ def map_fhir_encounter2medical_event(fhir_encounter: dict, procedure_code: str):
     return {
         "started_at_time": fhir_encounter["START"],
         "ended_at_time": fhir_encounter["STOP"],
-        "procedure": procedure_code,
+        "procedure": procedure_code
+        # TODO: generate ID here if we want one
+        # "id": 
+        # Add a link to person id as part of multivalued mapping. Just use random for now
+        # "person": 
     }
 
 def map_fhir_procedure2procedure_concept(fhir_procedure: dict):
@@ -67,3 +75,8 @@ def map_fhir_procedure2procedure_concept(fhir_procedure: dict):
         "id": fhir_procedure["CODE"],
         "name": fhir_procedure["DESCRIPTION"],
     }
+
+
+def calculate_age(born):
+    today = date.today()
+    return today.year - born.year - ((today.month, today.day) < (born.month, born.day))

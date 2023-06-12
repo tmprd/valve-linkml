@@ -5,16 +5,17 @@ from typing import List
 
 from .generate_from_fhir import generate_tables_from_fhir_mapping
 
-def generate_schema_data(table_dicts: List[dict], column_dicts: List[dict]):
+def generate_schema_data(data_table_dicts: List[dict], data_column_dicts: List[dict]):
+    """Generate data given some data table and column dicts. Don't use this with VALVE config metadata"""
     print("Generating data tables...")
 
     # Map some pre-generated data to our data tables if we have the right kind
-    table_names = [t["table"] for t in table_dicts]
+    table_names = [t["table"] for t in data_table_dicts]
     if "Person" in table_names and "Address" in table_names:
         pregenerated_table_data: dict = generate_tables_from_fhir_mapping()
 
     # Create the data tables themselves
-    for table_dict in table_dicts:
+    for table_dict in data_table_dicts:
         table_name = table_dict["table"]
         table_path = table_dict["path"]
 
@@ -23,7 +24,7 @@ def generate_schema_data(table_dicts: List[dict], column_dicts: List[dict]):
         
         # if os.path.exists(table_path): continue
         with open(table_path, 'w') as table_file:
-            table_columns = [c for c in column_dicts if c["table"] == table_dict["table"]]
+            table_columns = [c for c in data_column_dicts if c["table"] == table_dict["table"]]
             table_column_names = [c["column"] for c in table_columns]
             # Create the table
             writer = csv.DictWriter(table_file, delimiter="\t", fieldnames=table_column_names, lineterminator="\n")
