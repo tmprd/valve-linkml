@@ -17,9 +17,11 @@ def generate_tables_from_fhir_mapping(logger: Logger) -> dict:
 
         # Add some errors to some of the data
         person_error_set = generate_error_set(sum(1 for row in patients), 0.01)
+        address_error_set = person_error_set[:len(person_error_set)//2]
+
         medicalevent_error_set = generate_error_set(sum(1 for row in encounters), 0.0001)
         print(f"Adding {len(person_error_set)} errors to Person table")
-        print(f"Adding {len(person_error_set)} errors to Address table")
+        print(f"Adding {len(address_error_set)} errors to Address table")
         print(f"Adding {len(medicalevent_error_set)} errors to MedicalEvent table")
         # Reset to beginning of files after counting rows
         patients_file.seek(0)
@@ -37,7 +39,9 @@ def generate_tables_from_fhir_mapping(logger: Logger) -> dict:
             if index in person_error_set:
                 logger.info(f"Adding fake invalid data to Person {person['id']}")
                 person["gender"] = "invalid-example"
+                person["primary_email"] = "invalid-example.net"
 
+            if index in address_error_set:
                 logger.info(f"Adding fake invalid data to Address {person_address['id']}")
                 person_address["id"] = "invalid-example"
 
@@ -70,6 +74,7 @@ def map_fhir_patient2person(fhir_patient: dict, index: str, person_address: dict
         "birth_date": fhir_patient["BIRTHDATE"],
         "age_in_years": calculate_age(datetime.strptime(fhir_patient["BIRTHDATE"], "%Y-%m-%d")),
         "name": f'{fhir_patient["FIRST"]} {fhir_patient["LAST"]}',
+        "primary_email": f'{fhir_patient["FIRST"][0]}.{fhir_patient["LAST"]}@example.com',
         "gender": random.choice(['cisgender woman', 'nonbinary woman', 'transgender woman']) if (fhir_patient["GENDER"] == "F") else random.choice(['cisgender man', 'nonbinary man', 'transgender man']),
         "current_address": person_address["id"] # foreign key
     }

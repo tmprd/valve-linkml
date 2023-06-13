@@ -34,6 +34,9 @@ DEFAULT_PARENT_DATATYPE = DEFAULT_DATATYPE
 DEFAULT_PRIMARY_KEY = 'id'
 DEFAULT_PRIMARY_KEY_DATATYPE = DEFAULT_DATATYPE
 
+# TODO change this to local var used in datatype mapping
+SCHEMA_DEFAULT_RANGE = DEFAULT_DATATYPE
+
 def main():
     # CLI
     parser = ArgumentParser()
@@ -99,9 +102,9 @@ def slot2column_datatype(slot_usage_datatype: str, slot_range_name: str, is_slot
             return slot_range_identifier_type
         else:
             # Range is a class but doesn't have an identifier, so map to the default datatype
-            return DEFAULT_DATATYPE
+            return SCHEMA_DEFAULT_RANGE
     else:
-        return DEFAULT_DATATYPE
+        return SCHEMA_DEFAULT_RANGE
 
 
 def slot2column_structure(slot_range_name: str, slot_range_identifier_name: str, is_slot_range_a_class: bool, is_primary_key: bool):
@@ -143,6 +146,7 @@ def map_schema(yaml_schema_path: str, output_dir: str, generate_data: bool = Fal
     all_classes = linkml_schema.all_classes().values()
     all_slots = linkml_schema.all_slots().values()
     all_enums = linkml_schema.all_enums().values()
+    SCHEMA_DEFAULT_RANGE = linkml_schema.schema.default_range
     
     validate_schema(all_classes, all_slots, all_enums)
 
@@ -181,9 +185,8 @@ def map_schema(yaml_schema_path: str, output_dir: str, generate_data: bool = Fal
         map_enum(enum, column_dicts, datatype_dicts, table_dicts, output_dir)
 
     # Add "default_range" as a datatype if needed
-    default_range = linkml_schema.schema.default_range
-    if not default_range in [d["datatype"] for d in datatype_dicts]:
-        datatype_dicts.append(slot2datatype_row(default_range, None, None))
+    if not SCHEMA_DEFAULT_RANGE in [d["datatype"] for d in datatype_dicts]:
+        datatype_dicts.append(slot2datatype_row(SCHEMA_DEFAULT_RANGE, None, None))
 
     # VALVE schema tables should include the base metadata rows
     all_table_dicts = init_valve_table("test/valve_sample_schema/table.tsv", VALVE_SCHEMA, lambda row: map_table_path(row, output_dir)) + table_dicts
