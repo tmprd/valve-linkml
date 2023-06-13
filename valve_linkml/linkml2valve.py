@@ -50,11 +50,24 @@ def main():
     LOGGER.setLevel(level=logging.WARNING)
 
     # Run
-    map_schema(args.yaml_schema_path, args.generate_data)
-    # TODO: LinkML data mapping incomplete, see map_data() below
-    # if args.data_dir is not None:
-    #     map_data(args.yaml_schema_path, args.data_dir)
+    linkml2valve(args.yaml_schema_path, args.output_dir, args.data_dir, args.generate_data)
 
+def linkml2valve(yaml_schema_path: str, output_dir: str, data_dir: str = None, generate_data: bool = False):
+    # Map schema and serialize to VALVE schema TSVs
+    valve_tables = map_schema(yaml_schema_path, output_dir)
+    for table_name in valve_tables:
+        table_dict = valve_tables[table_name]
+        write_dicts2tsv(table_dict["path"], table_dict["rows"], VALVE_SCHEMA[table_name]["headers"])
+
+    # # Create the actual data table files with some generated data (exclude meta tables)
+    if generate_data:
+        generate_schema_data(valve_tables["table"]["rows"], valve_tables["column"]["rows"], LOGGER)
+
+    # Map data and serialize to VALVE data TSVs
+    if data_dir is not None:
+        map_data(yaml_schema_path, data_dir)
+
+# Mappings
 
 def class2table_row(class_name: str, class_description: str, table_dir: str):
     # A class is a Table row
@@ -95,7 +108,7 @@ def slot2column_datatype(slot_usage_datatype: str, slot_range_name: str, is_slot
         return slot_usage_datatype
     elif slot_range_name is not None:
         if not is_slot_range_a_class:
-            # Range is not a class, e.g. a default/scalar type
+            # Range is not a class, e.g. a default/scalar type, so map to its name
             return slot_range_name
         elif slot_range_identifier_type is not None:
             # Range is a class AND has an identifier, so map to the datatype of the class's identifier (primary key)
@@ -137,17 +150,17 @@ def slot2datatype_row(slot_name: str, slot_description, slot_pattern: str, slot_
         "HTML type": None, # TODO
     }
 
-def map_schema(yaml_schema_path: str, output_dir: str, generate_data: bool = False):
+def map_schema(yaml_schema_path: str, output_dir: str) -> dict[str, dict[str, str]]:
     # Data tables go in a subdirectory of the schema directory by default
     data_table_dir = os.path.join(output_dir, "data")
 
+    # Parse schema
     linkml_schema = SchemaView(yaml_schema_path)
-    
     all_classes = linkml_schema.all_classes().values()
     all_slots = linkml_schema.all_slots().values()
     all_enums = linkml_schema.all_enums().values()
     SCHEMA_DEFAULT_RANGE = linkml_schema.schema.default_range
-    
+
     validate_schema(all_classes, all_slots, all_enums)
 
     table_dicts = []
@@ -180,6 +193,9 @@ def map_schema(yaml_schema_path: str, output_dir: str, generate_data: bool = Fal
             # TODO: maybe add this as the first column...
             column_dicts.append(slot2column_row(DEFAULT_PRIMARY_KEY, linkml_class.name, "generated column", None, None, None, None, is_slot_range_a_class=False, is_primary_key=True, is_required=True))
 
+    # Map multivalued slots to new columns in the class table of the multivalued slot's range. This has to be done after adding primary keys for missing identifiers.
+    map_multivalued_slots(all_slots, all_classes, column_dicts)
+
     # Map enums
     for enum in all_enums:
         map_enum(enum, column_dicts, datatype_dicts, table_dicts, output_dir)
@@ -188,39 +204,38 @@ def map_schema(yaml_schema_path: str, output_dir: str, generate_data: bool = Fal
     if not SCHEMA_DEFAULT_RANGE in [d["datatype"] for d in datatype_dicts]:
         datatype_dicts.append(slot2datatype_row(SCHEMA_DEFAULT_RANGE, None, None))
 
-    # VALVE schema tables should include the base metadata rows
+    # Mapped schema tables should include the base VALVE metadata rows
     all_table_dicts = init_valve_table("test/valve_sample_schema/table.tsv", VALVE_SCHEMA, lambda row: map_table_path(row, output_dir)) + table_dicts
     all_column_dicts = init_valve_table("test/valve_sample_schema/column.tsv", VALVE_SCHEMA) + column_dicts
     all_datatype_dicts = init_valve_table("test/valve_sample_schema/datatype.tsv", None)
+
     # Choose VALVE metadata datatypes over duplicately named LinkML datatypes
     for d in datatype_dicts:
         if d["datatype"] not in [v["datatype"] for v in all_datatype_dicts]:
             all_datatype_dicts.append(d)
         else:
             LOGGER.warning(f"VALVE datatype {d['datatype']} already exists. Skipping.")
-    
-    # Serialize to VALVE TSVs
-    write_dicts2tsv(output_dir + '/table.tsv', all_table_dicts, VALVE_SCHEMA["table"]["headers"])
-    write_dicts2tsv(output_dir + '/column.tsv', all_column_dicts, VALVE_SCHEMA["column"]["headers"])
-    write_dicts2tsv(output_dir + '/datatype.tsv', all_datatype_dicts, VALVE_SCHEMA["datatype"]["headers"])
 
-    # Create the actual data table files with some generated data (exclude meta tables)
-    if generate_data:
-        generate_schema_data(table_dicts, column_dicts, LOGGER)
+    return {
+        "table": {"rows":all_table_dicts, "path": output_dir + '/table.tsv'},
+        "column": {"rows": all_column_dicts, "path": output_dir + '/column.tsv'}, 
+        "datatype": {"rows": all_datatype_dicts, "path": output_dir + '/datatype.tsv'}
+    }
+
 
 def map_class_slot(schemaView: SchemaView, slot: SlotDefinition, slot_class: ClassDefinition, 
                    column_dicts: List[dict], datatype_dicts: List[dict],
                    all_classes: List[ClassDefinition], all_enums: List[EnumDefinition]):
+    
     # Slot properties that are relevant to its corresponding Column table mapping
     is_slot_required = slot.required
     is_slot_range_a_class = False
     is_slot_primary_key = slot.identifier or slot.key
 
-    # If the slot is multivalued, just skip for now
-    # TODO remove this multivalued slot, then add a new column to the class of the range of this slot, where the "structure" is from(<range_clas>.<identifier>)
-    # Ex. Person has_familial_relationships FamilialRelationship => FamilialRelationship person from(Person.identifier)
+    # If the slot is multivalued, don't add it as a column for this table (effectively removing it as a column). 
+    # This will be mapped to another table after all class slots have been mapped and primary keys are generated.
     if slot.multivalued:
-        print(f"Skipping multivalued slot {slot.name} in class {slot_class.name} for now.")
+        LOGGER.info(f"Skipping multivalued slot {slot.name} in class {slot_class.name} for now.")
         return
 
     # Map the range of a class-specific slot_usage to a new Datatype row. Example: "primary_email" in Person uses a "person_primary_email" datatype.
@@ -245,15 +260,14 @@ def map_class_slot(schemaView: SchemaView, slot: SlotDefinition, slot_class: Cla
         # If slot usage is required, then the slot is required in the context of this class
         is_slot_required = slot_usage.required
 
-    # If this slot's range is a class, then we need that class's identifier (slot), and its datatype
+    # If this slot's range is a class, then we need that class's identifier (slot) and datatype of that identifier
     range_class = next((c for c in all_classes if c.name == slot.range), None)
     range_class_identifier_name = None
     range_class_identifier_datatype = None
     if range_class is not None:
         is_slot_range_a_class = True
-        # TODO: Get other imported identifiers from, e.g. Address's class_uri: schema:PostalAddress
         range_class_identifier = get_identifier_or_key_slot(schemaView, range_class.name)
-        if range_class_identifier:
+        if range_class_identifier is not None:
             range_class_identifier_name = range_class_identifier.name
             # TODO: Does this identifier have a slot_usage?
             slot_range_class_identifier_usage_datatype = None
@@ -281,6 +295,42 @@ def map_class_slot(schemaView: SchemaView, slot: SlotDefinition, slot_class: Cla
                                         is_slot_primary_key,
                                         is_slot_required))
 
+
+def map_multivalued_slots(all_slots: List[SlotDefinition], all_classes: List[ClassDefinition], column_dicts: List[dict]):
+    for slot in all_slots:
+        if not slot.multivalued: continue
+
+        # Add a new column to the class of the range of this slot, where the "structure" is from(<range_clas>.<identifier>)
+        # Ex. Person
+        #       - has_medical_history:
+        #           multivalued: true
+        #           range: MedicalEvent
+        #  => MedicalEvent
+        #       - person:
+        #           range: Person
+
+        slot_class = next((c for c in all_classes if slot.name in c.slots), None)
+        if slot_class is None:
+            continue
+
+        new_column_table_name = slot.range # ex. MedicalEvent
+        new_column_name = slot_class.name.lower() # ex. person   
+        new_column_fk_table = slot_class.name # ex. Person
+
+        # Get the primary key of the table that serves as the range of this slot
+        slot_class_table_dicts = [c for c in column_dicts if c["table"] == slot_class.name]
+        slot_range_class_primary_key_column = next((c for c in slot_class_table_dicts if c["structure"] == "primary"), None)
+        new_column_fk_column = slot_range_class_primary_key_column["column"] # ex. Person.id
+        new_column_datatype = slot_range_class_primary_key_column["datatype"] # ex. string
+
+        LOGGER.warning(f"Mapping multivalued slot '{slot.name}' with range '{slot.range}' in class '{slot_class.name}' => to new column '{new_column_name}' in '{new_column_table_name}'")
+
+        column_dicts.append(slot2column_row(new_column_name, new_column_table_name, f"generated column from multivalued slot {slot_class.name}.{slot.name}", 
+                                            new_column_fk_table, new_column_fk_column, new_column_datatype,
+                                            slot_usage_datatype=None, 
+                                            is_slot_range_a_class=True, is_primary_key=False, is_required=slot.required))
+
+
 def map_enum(enum: EnumDefinition, column_dicts: List[dict], datatype_dicts: List[dict], table_dicts: List[dict], valve_dir: str):
     # Map permissible enum values to "condition" in Datatype table
     datatype_dicts.append(slot2datatype_row(enum.name, enum.description, None, enum.permissible_values))
@@ -299,6 +349,7 @@ def map_enum(enum: EnumDefinition, column_dicts: List[dict], datatype_dicts: Lis
 
 
 def map_data(yaml_schema_path: str, yaml_data_dir: str):
+    raise NotImplementedError("LinkML data mapping not implemented yet")
     for file in os.listdir(yaml_data_dir):
         if not file.endswith(".yaml"): continue
         # `linkml-convert -t tsv --index-slot persons -o test/linkml_input/personinfo_data_valid.tsv -s test/linkml_input/personinfo.yaml test/linkml_input/personinfo_data_valid.yaml`
@@ -318,6 +369,7 @@ def get_inherited_class_slots(schemaView: SchemaView, linkml_class: ClassDefinit
 # Copied from https://github.com/linkml/linkml/blob/c933c7c0c82e3eaa48d815f9cae033360626438e/linkml/generators/typescriptgen.py#L140
 def get_identifier_or_key_slot(sv: SchemaView, cn: ClassDefinitionName) -> Optional[SlotDefinition]:
     """Get class's identifier slot, or a slot that's an identifier from some (transitively) inherited class"""
+    # TODO: Get other imported identifiers from, e.g. Address's class_uri: schema:PostalAddress
     id_slot = sv.get_identifier_slot(cn)
     if id_slot:
         return id_slot
