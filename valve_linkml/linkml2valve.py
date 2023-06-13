@@ -127,7 +127,7 @@ def slot2datatype_row(slot_name: str, slot_description, slot_pattern: str, slot_
         # A slot's pattern, or the permissible values of a slot's enum, maps to a Datatype "condition"
         "condition": (f"match(/{slot_pattern}/)" if slot_pattern else None) or (f"in({format_enum_str(slot_enum_values)})" if slot_enum_values else None),
         "structure": None, 
-        "description": slot_description or f"This is a {slot_name}", # default to name if no description
+        "description": slot_description or f"a {slot_name}", # default to name if no description
         "SQLite type": None, # TODO
         "PostgreSQL type": None, # TODO
         "RDF type": None, # TODO
@@ -203,7 +203,7 @@ def map_schema(yaml_schema_path: str, output_dir: str, generate_data: bool = Fal
 
     # Create the actual data table files with some generated data (exclude meta tables)
     if generate_data:
-        generate_schema_data(table_dicts, column_dicts)
+        generate_schema_data(table_dicts, column_dicts, LOGGER)
 
 def map_class_slot(schemaView: SchemaView, slot: SlotDefinition, slot_class: ClassDefinition, 
                    column_dicts: List[dict], datatype_dicts: List[dict],
@@ -213,14 +213,28 @@ def map_class_slot(schemaView: SchemaView, slot: SlotDefinition, slot_class: Cla
     is_slot_range_a_class = False
     is_slot_primary_key = slot.identifier or slot.key
 
+    # If the slot is multivalued, just skip for now
+    # TODO remove this multivalued slot, then add a new column to the class of the range of this slot, where the "structure" is from(<range_clas>.<identifier>)
+    # Ex. Person has_familial_relationships FamilialRelationship => FamilialRelationship person from(Person.identifier)
+    if slot.multivalued:
+        print(f"Skipping multivalued slot {slot.name} in class {slot_class.name} for now.")
+        return
+
     # Map the range of a class-specific slot_usage to a new Datatype row. Example: "primary_email" in Person uses a "person_primary_email" datatype.
+    # If slot_usage has a class as its range, then we map that to a from() foreign key "structure" in the Column table.
     # TODO: If slot_usage has an enum as its range, then we map that to a from() foreign key "structure" in the Column table.
     slot_usage = slot_class.slot_usage.get(slot.name)
     slot_usage_datatype = None
     if slot_usage is not None:
-        # If the slot_usage is an Enum, save it for later when adding all Enums
+        # If the slot usage range is a class, then we only need the identifier of that class as the datatype
+        slot_usage_class = next((c for c in all_classes if c.name == slot_usage.range), None)
+        # If the slot_usage range is an Enum, save it for later when adding all Enums
         slot_usage_enum = next((e for e in all_enums if e.name == slot_usage.range), None)
-        if slot_usage_enum is None:
+        if slot_usage_class is not None:
+            # TODO get datatype of identifier of range class of slot usage
+            # slot_usage_datatype = ...
+            pass
+        elif slot_usage_enum is None:
             # Create a new Datatype for this slot usage. Then set that as the "datatype" in the Column table.
             slot_usage_datatype = f"{slot_class.name.lower()}_{slot_usage.name}"
             datatype_dicts.append(slot2datatype_row(slot_usage_datatype, None, slot_usage.pattern, None))
