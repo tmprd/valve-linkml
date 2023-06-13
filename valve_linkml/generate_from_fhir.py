@@ -7,9 +7,9 @@ from .utils import generate_error_set
 
 def generate_tables_from_fhir_mapping(logger: Logger) -> dict:
     # Read the pre-generated data
-    TEST_PATIENT_DATA_FILE_PATH = "test/linkml2valve/synthea/patients.csv"
-    TEST_ENCOUNTER_DATA_FILE_PATH = "test/linkml2valve/synthea/encounters.csv"
-    TEST_PROCEDURE_DATA_FILE_PATH = "test/linkml2valve/synthea/procedures.csv"
+    TEST_PATIENT_DATA_FILE_PATH = "test/synthea/patients.csv"
+    TEST_ENCOUNTER_DATA_FILE_PATH = "test/synthea/encounters.csv"
+    TEST_PROCEDURE_DATA_FILE_PATH = "test/synthea/procedures.csv"
     with open(TEST_PATIENT_DATA_FILE_PATH, "r") as patients_file, open(TEST_ENCOUNTER_DATA_FILE_PATH, "r") as encounters_file, open(TEST_PROCEDURE_DATA_FILE_PATH, "r") as procedures_file:
         patients = csv.DictReader(patients_file, delimiter=",")
         encounters = csv.DictReader(encounters_file, delimiter=",")

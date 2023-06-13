@@ -11,23 +11,26 @@ python3 -m test.test_linkml2valve
 
 ### Test VALVE validation
 ```shell
-valve.py test/linkml2valve/valve/table.tsv test/linkml2valve/valve/personinfo.db
+rm test/valve_output/personinfo.db
+ontodev_valve test/valve_output/table.tsv test/valve_output/personinfo.db --verbose
 ```
 
 ### Test LinkML validation
 ```shell
 # Validate TSV
-linkml-validate --schema test/linkml2valve/linkml/personinfo.yaml --target-class Person --index-slot id test/linkml2valve/valve/data/Person.tsv
-linkml-validate --schema test/linkml2valve/linkml/personinfo.yaml --target-class Address --index-slot street test/linkml2valve/valve/data/Address.tsv
+linkml-validate --schema test/linkml_input/personinfo.yaml --target-class Person --index-slot id test/valve_output/data/Person.tsv
+linkml-validate --schema test/linkml_input/personinfo.yaml --target-class Address --index-slot street test/valve_output/data/Address.tsv
+
+linkml-validate --schema test/linkml_input/personinfo.yaml --target-class ProcedureConcept --index-slot id test/valve_output/data/ProcedureConcept.tsv
 ```
 
 LinkML conversion for validating JSON
 ```shell
 # Convert TSV to JSON
-linkml-convert --schema test/linkml2valve/linkml/personinfo.yaml --target-class Person --index-slot id test/linkml2valve/valve/data/Person.tsv -o test/linkml2valve/valve/data/Person.json
-linkml-convert --schema test/linkml2valve/linkml/personinfo.yaml --target-class Address --index-slot street test/linkml2valve/valve/data/Address.tsv -o test/linkml2valve/valve/data/Address.json
+linkml-convert --schema test/linkml_input/personinfo.yaml --target-class Person --index-slot id test/valve_output/data/Person.tsv -o test/valve_output/data/Person.json
+linkml-convert --schema test/linkml_input/personinfo.yaml --target-class Address --index-slot street test/valve_output/data/Address.tsv -o test/valve_output/data/Address.json
 
 # Validate JSON
-linkml-validate --schema test/linkml2valve/linkml/personinfo.yaml --target-class Person test/linkml2valve/valve/data/Person.json
-linkml-validate --schema test/linkml2valve/linkml/personinfo.yaml --target-class Address test/linkml2valve/valve/data/Address.json
+linkml-validate --schema test/linkml_input/personinfo.yaml --target-class Person test/valve_output/data/Person.json
+linkml-validate --schema test/linkml_input/personinfo.yaml --target-class Address test/valve_output/data/Address.json
 ```

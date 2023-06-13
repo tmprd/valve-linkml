@@ -186,9 +186,9 @@ def map_schema(yaml_schema_path: str, output_dir: str, generate_data: bool = Fal
         datatype_dicts.append(slot2datatype_row(default_range, None, None))
 
     # VALVE schema tables should include the base metadata rows
-    all_table_dicts = init_valve_table("test/valve2linkml/valve/table.tsv", VALVE_SCHEMA, lambda row: map_table_path(row, output_dir)) + table_dicts
-    all_column_dicts = init_valve_table("test/valve2linkml/valve/column.tsv", VALVE_SCHEMA) + column_dicts
-    all_datatype_dicts = init_valve_table("test/valve2linkml/valve/datatype.tsv", None)
+    all_table_dicts = init_valve_table("test/valve_sample_schema/table.tsv", VALVE_SCHEMA, lambda row: map_table_path(row, output_dir)) + table_dicts
+    all_column_dicts = init_valve_table("test/valve_sample_schema/column.tsv", VALVE_SCHEMA) + column_dicts
+    all_datatype_dicts = init_valve_table("test/valve_sample_schema/datatype.tsv", None)
     # Choose VALVE metadata datatypes over duplicately named LinkML datatypes
     for d in datatype_dicts:
         if d["datatype"] not in [v["datatype"] for v in all_datatype_dicts]:
@@ -298,7 +298,7 @@ def map_enum(enum: EnumDefinition, column_dicts: List[dict], datatype_dicts: Lis
 def map_data(yaml_schema_path: str, yaml_data_dir: str):
     for file in os.listdir(yaml_data_dir):
         if not file.endswith(".yaml"): continue
-        # `linkml-convert -t tsv --index-slot persons -o test/linkml2valve/data/personinfo_data_valid.tsv -s test/linkml2valve/schema/personinfo.yaml test/linkml2valve/data/personinfo_data_valid.yaml`
+        # `linkml-convert -t tsv --index-slot persons -o test/linkml_input/personinfo_data_valid.tsv -s test/linkml_input/personinfo.yaml test/linkml_input/personinfo_data_valid.yaml`
         # Problem: this LinkML function should be available as undecorated to call programatically
         # Problem: this LinkML function fails to convert if the data is invalid
         # Problem: need to know "index-slot" of the data for outputting TSVs
