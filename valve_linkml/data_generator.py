@@ -3,7 +3,7 @@ import os
 import csv
 from typing import List
 
-from .generate_from_fhir import generate_tables_from_fhir_mapping
+from .generate_from_synthea import generate_tables_from_fhir_mapping
 
 def generate_schema_data(data_table_dicts: List[dict], data_column_dicts: List[dict], logger):
     """Generate data given some data table and column dicts. Don't use this with VALVE config metadata"""

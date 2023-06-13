@@ -7,12 +7,14 @@ Convert LinkML schema + data to VALVE tables and vice versa.
 ### Test schema conversion
 ```shell
 python3 -m test.test_linkml2valve
+# This will generate VALVE tables in the `test/valve_output` folder.
 ```
 
 ### Test VALVE validation
 ```shell
 rm test/valve_output/personinfo.db
 ontodev_valve test/valve_output/table.tsv test/valve_output/personinfo.db --verbose
+# This will generate a personinfo.db in the `test/valve_output` folder.
 ```
 
 ### Test LinkML validation
