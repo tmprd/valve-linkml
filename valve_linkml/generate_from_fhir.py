@@ -17,8 +17,9 @@ def generate_tables_from_fhir_mapping(logger: Logger) -> dict:
 
         # Add some errors to some of the data
         person_error_set = generate_error_set(sum(1 for row in patients), 0.01)
-        medicalevent_error_set = generate_error_set(sum(1 for row in encounters), 0.001)
+        medicalevent_error_set = generate_error_set(sum(1 for row in encounters), 0.0001)
         print(f"Adding {len(person_error_set)} errors to Person table")
+        print(f"Adding {len(person_error_set)} errors to Address table")
         print(f"Adding {len(medicalevent_error_set)} errors to MedicalEvent table")
         # Reset to beginning of files after counting rows
         patients_file.seek(0)
@@ -31,14 +32,17 @@ def generate_tables_from_fhir_mapping(logger: Logger) -> dict:
 
         for index, patient in enumerate(patients):
             if index == 0: continue # skip header row because we've enumerated it
-            person_address = map_fhir_patient2address(patient, index)
-            address_dicts.append(person_address)
-            
+            person_address = map_fhir_patient2address(patient, index)            
             person = map_fhir_patient2person(patient, index, person_address)
             if index in person_error_set:
                 logger.info(f"Adding fake invalid data to Person {person['id']}")
                 person["gender"] = "invalid-example"
+
+                logger.info(f"Adding fake invalid data to Address {person_address['id']}")
+                person_address["id"] = "invalid-example"
+
             person_dicts.append(person)
+            address_dicts.append(person_address)
 
         unique_procedures = list({procedure["CODE"]: procedure for procedure in procedures}.values())
         for index, procedure in enumerate(unique_procedures):

@@ -16,7 +16,6 @@ NamedThing	id		text	primary
 NamedThing	name	empty	text		
 NamedThing	description	empty	text		
 NamedThing	image	empty	text		
-Person	aliases	empty	string		
 Person	id		string	primary	
 Person	name	empty	string		
 Person	description	empty	string		
@@ -25,12 +24,8 @@ Person	primary_email	empty	person_primary_email
 Person	birth_date	empty	text		
 Person	age_in_years	empty	person_age_in_years		
 Person	gender	empty	GenderType		
-Person	current_address	empty	text		The address at which a person currently lives
-Person	has_employment_history	empty	text		
-Person	has_familial_relationships	empty	text		
-Person	has_medical_history	empty	text		
-HasAliases	aliases	empty	text		
-Organization	aliases	empty	string		
+Person	current_address	empty	text	from(Address.id)	The address at which a person currently lives
+HasAliases	id		text	primary	generated column
 Organization	id		string	primary	
 Organization	name	empty	string		
 Organization	description	empty	string		
@@ -38,16 +33,17 @@ Organization	image	empty	string
 Organization	mission_statement	empty	text		
 Organization	founding_date	empty	text		
 Organization	founding_location	empty	string	from(Place.id)	
-Place	aliases	empty	string		
 Place	id		text	primary	
 Place	name	empty	text		
 Address	street	empty	text		
 Address	city	empty	text		
 Address	postal_code	empty	string		
+Address	id		text	primary	generated column
 Event	started_at_time	empty	date		
 Event	ended_at_time	empty	date		
 Event	duration	empty	float		
 Event	is_current	empty	boolean		
+Event	id		text	primary	generated column
 Concept	id		string	primary	
 Concept	name	empty	string		
 Concept	description	empty	string		
@@ -64,15 +60,18 @@ Relationship	started_at_time	empty	date
 Relationship	ended_at_time	empty	date		
 Relationship	related_to	empty	text		
 Relationship	type	empty	text		
+Relationship	id		text	primary	generated column
 FamilialRelationship	started_at_time	empty	date		
 FamilialRelationship	ended_at_time	empty	date		
-FamilialRelationship	related_to		familialrelationship_related_to	from(Person.id)	
+FamilialRelationship	related_to		string	from(Person.id)	
 FamilialRelationship	type		FamilialRelationshipType		
+FamilialRelationship	id		text	primary	generated column
 EmploymentEvent	started_at_time	empty	date		
 EmploymentEvent	ended_at_time	empty	date		
 EmploymentEvent	duration	empty	float		
 EmploymentEvent	is_current	empty	boolean		
 EmploymentEvent	employed_at	empty	string	from(Organization.id)	
+EmploymentEvent	id		text	primary	generated column
 MedicalEvent	started_at_time	empty	date		
 MedicalEvent	ended_at_time	empty	date		
 MedicalEvent	duration	empty	float		
@@ -80,6 +79,7 @@ MedicalEvent	is_current	empty	boolean
 MedicalEvent	in_location	empty	string	from(Place.id)	
 MedicalEvent	diagnosis	empty	string	from(DiagnosisConcept.id)	
 MedicalEvent	procedure	empty	string	from(ProcedureConcept.id)	
+MedicalEvent	id		text	primary	generated column
 WithLocation	in_location	empty	string	from(Place.id)	
-Container	persons	empty	string	from(Person.id)	
-Container	organizations	empty	string	from(Organization.id)	
+WithLocation	id		text	primary	generated column
+Container	id		text	primary	generated column

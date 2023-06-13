@@ -1,138 +1,137 @@
 id	name	description	image
-169553002	Insertion of subcutaneous contraceptive		
-430193006	Medication Reconciliation (procedure)		
-117015009	Throat culture (procedure)		
-269911007	Sputum examination (procedure)		
-65200003	Insertion of intrauterine contraceptive device		
-301807007	Removal of subcutaneous contraceptive		
-288086009	Suture open wound		
-76601001	Intramuscular injection		
-23426006	Measurement of respiratory function (procedure)		
-1225002	Upper arm X-ray		
-274474001	Bone immobilization		
-65546002	Extraction of wisdom tooth		
-252160004	Standard pregnancy test		
-169230002	Ultrasound scan for fetal viability		
-274804006	Evaluation of uterine fundal height		
-225158009	Auscultation of the fetal heart		
-44608003	Blood typing  RH typing		
-104091002	Hemoglobin / Hematocrit / Platelet count		
-47758006	Hepatitis B Surface Antigen Measurement		
-31676001	Human immunodeficiency virus antigen test		
-310861008	Chlamydia antigen test		
-165829005	Gonorrhea infection test		
-269828009	Syphilis infection test		
-117010004	Urine culture		
-90226004	Cytopathology procedure  preparation of smear  genital source (procedure)		
-395123002	Urine screening test for diabetes		
-104375008	Hepatitis C antibody test		
-169690007	Rubella screening		
-104326007	Measurement of Varicella-zoster virus antibody		
-28163009	Skin test for tuberculosis		
-167271000	Urine protein test		
-5880005	Physical examination		
-443529005	Screening for chromosomal aneuploidy in prenatal amniotic fluid		
-271442007	Fetal anatomy study		
-275833003	Alpha-fetoprotein test		
-399014008	Vaccination for diphtheria  pertussis  and tetanus		
-268556000	Urine screening for glucose		
-118001005	Streptococcus pneumoniae group B antigen test		
-18946005	Epidural anesthesia		
-66348005	Childbirth		
-171207006	Depression screening		
-85548006	Episiotomy		
-11466000	Cesarean section		
-10383002	Counseling for termination of pregnancy		
-714812005	Induced termination of pregnancy		
-386394001	Pregnancy termination care		
-14768001	Peripheral blood smear interpretation		
-415300000	Review of systems (procedure)		
-162676008	Brief general examination (procedure)		
-237001001	Augmentation of labor		
-236974004	Instrumental delivery		
-287664005	Bilateral tubal ligation		
-73761001	Colonoscopy		
-312681000	Bone density scan (procedure)		
-180325003	Electrical cardioversion		
-71651007	Mammography (procedure)		
-35025007	Manual pelvic examination (procedure)		
-68254000	Removal of intrauterine device		
-31208007	Medical induction of labor		
-168594001	Clavicle X-ray		
-305428000	Admission to orthopedic department		
-171231001	Asthma screening		
-241055006	Mammogram - symptomatic (procedure)		
-1571000087109	Ultrasonography of bilateral breasts (procedure)		
-122548005	Biopsy of breast (procedure)		
-434363004	Human epidermal growth factor receptor 2 gene detection by fluorescence in situ hybridization (procedure)		
-433114000	Human epidermal growth factor receptor 2 gene detection by immunohistochemistry (procedure)		
-367336001	Chemotherapy (procedure)		
-234262008	Excision of axillary lymph node (procedure)		
-69031006	Excision of breast tissue (procedure)		
-33195004	Teleradiotherapy procedure (procedure)		
-399208008	Plain chest X-ray		
-395142003	Allergy screening test		
-46706006	Replacement of contraceptive intrauterine device		
-313191000	Injection of adrenaline		
-180256009	Subcutaneous immunotherapy		
-104435004	Screening for occult blood in feces (procedure)		
-274031008	Rectal polypectomy		
-169673001	Antenatal RhD antibody screening		
-51116004	RhD passive immunization		
-40701008	Echocardiography (procedure)		
-433112001	Percutaneous mechanical thrombectomy of portal vein using fluoroscopic guidance		
-236931002	Methotrexate injection into tubal pregnancy		
-19490002	Ankle X-ray		
-60027007	X-ray or wrist		
-22523008	Vasectomy		
-447365002	Insertion of biventricular implantable cardioverter defibrillator		
-18286008	Catheter ablation of tissue of heart		
-65588006	Premature birth of newborn		
-54550000	Seizure Count Cerebral Cortex Electroencephalogram (EEG)		
-180207008	Intravenous blood transfusion of packed cells (procedure)		
-415070008	Percutaneous coronary intervention		
-232717009	Coronary artery bypass grafting		
-384700001	Injection of tetanus antitoxin		
-24623002	Screening mammography (procedure)		
-241615005	Magnetic resonance imaging of breast (procedure)		
-396487001	Sentinel lymph node biopsy (procedure)		
-443497002	Excision of sentinel lymph node (procedure)		
-127783003	Spirometry (procedure)		
-80146002	Appendectomy		
-410006001	Digital examination of rectum		
-392021009	Lumpectomy of breast (procedure)		
-112790001	Nasal sinus endoscopy (procedure)		
-74016001	Knee X-ray		
-699253003	Surgical manipulation of joint of knee		
-228557008	Cognitive and behavioral therapy		
-445912000	Excision of fallopian tube and surgical removal of ectopic pregnancy		
-311791003	Information gathering (procedure)		
-65575008	Biopsy of prostate		
-90470006	Prostatectomy		
-43075005	Partial resection of colon		
-703423002	Combined chemotherapy and radiation therapy (procedure)		
-418891003	Computed tomography of chest and abdomen		
-432231006	Fine needle aspiration biopsy of lung (procedure)		
-698354004	Magnetic resonance imaging for measurement of brain volume (procedure)		
-398171003	Hearing examination (procedure)		
-16335031000119103	High resolution computed tomography of chest without contrast (procedure)		
-434158009	Transthoracic three dimensional ultrasonography of heart (procedure)		
-433236007	Transthoracic echocardiography		
-385798007	Radiation therapy care (regime/therapy)		
-15081005	Pulmonary rehabilitation (regime/therapy)		
-76164006	Biopsy of colon		
-387685009	Surgical manipulation of shoulder joint		
-183856001	Referral to hypertension clinic		
-268425006	Pelvis X-ray		
-265764009	Renal dialysis (procedure)		
-88039007	Transplant of lung (procedure)		
-91602002	Thoracentesis (procedure)		
-177157003	Spontaneous breech delivery		
-305433001	Admission to trauma surgery department		
-173160006	Diagnostic fiberoptic bronchoscopy (procedure)		
-43060002	Intravenous injection (procedure)		
-167995008	Sputum microscopy (procedure)		
-108290001	Radiation oncology AND/OR radiotherapy (procedure)		
-387607004	Construction of diverting colostomy		
-112001000119100	positive screening for depression on phq9		
-112011000119102	negative screening for depression on phq9		
+1	430193006	Medication Reconciliation (procedure)	
+2	117015009	Throat culture (procedure)	
+3	269911007	Sputum examination (procedure)	
+4	65200003	Insertion of intrauterine contraceptive device	
+5	301807007	Removal of subcutaneous contraceptive	
+6	288086009	Suture open wound	
+7	76601001	Intramuscular injection	
+8	23426006	Measurement of respiratory function (procedure)	
+9	1225002	Upper arm X-ray	
+10	274474001	Bone immobilization	
+11	65546002	Extraction of wisdom tooth	
+12	252160004	Standard pregnancy test	
+13	169230002	Ultrasound scan for fetal viability	
+14	274804006	Evaluation of uterine fundal height	
+15	225158009	Auscultation of the fetal heart	
+16	44608003	Blood typing  RH typing	
+17	104091002	Hemoglobin / Hematocrit / Platelet count	
+18	47758006	Hepatitis B Surface Antigen Measurement	
+19	31676001	Human immunodeficiency virus antigen test	
+20	310861008	Chlamydia antigen test	
+21	165829005	Gonorrhea infection test	
+22	269828009	Syphilis infection test	
+23	117010004	Urine culture	
+24	90226004	Cytopathology procedure  preparation of smear  genital source (procedure)	
+25	395123002	Urine screening test for diabetes	
+26	104375008	Hepatitis C antibody test	
+27	169690007	Rubella screening	
+28	104326007	Measurement of Varicella-zoster virus antibody	
+29	28163009	Skin test for tuberculosis	
+30	167271000	Urine protein test	
+31	5880005	Physical examination	
+32	443529005	Screening for chromosomal aneuploidy in prenatal amniotic fluid	
+33	271442007	Fetal anatomy study	
+34	275833003	Alpha-fetoprotein test	
+35	399014008	Vaccination for diphtheria  pertussis  and tetanus	
+36	268556000	Urine screening for glucose	
+37	118001005	Streptococcus pneumoniae group B antigen test	
+38	18946005	Epidural anesthesia	
+39	66348005	Childbirth	
+40	171207006	Depression screening	
+41	85548006	Episiotomy	
+42	11466000	Cesarean section	
+43	10383002	Counseling for termination of pregnancy	
+44	714812005	Induced termination of pregnancy	
+45	386394001	Pregnancy termination care	
+46	14768001	Peripheral blood smear interpretation	
+47	415300000	Review of systems (procedure)	
+48	162676008	Brief general examination (procedure)	
+49	237001001	Augmentation of labor	
+50	236974004	Instrumental delivery	
+51	287664005	Bilateral tubal ligation	
+52	73761001	Colonoscopy	
+53	312681000	Bone density scan (procedure)	
+54	180325003	Electrical cardioversion	
+55	71651007	Mammography (procedure)	
+56	35025007	Manual pelvic examination (procedure)	
+57	68254000	Removal of intrauterine device	
+58	31208007	Medical induction of labor	
+59	168594001	Clavicle X-ray	
+60	305428000	Admission to orthopedic department	
+61	171231001	Asthma screening	
+62	241055006	Mammogram - symptomatic (procedure)	
+63	1571000087109	Ultrasonography of bilateral breasts (procedure)	
+64	122548005	Biopsy of breast (procedure)	
+65	434363004	Human epidermal growth factor receptor 2 gene detection by fluorescence in situ hybridization (procedure)	
+66	433114000	Human epidermal growth factor receptor 2 gene detection by immunohistochemistry (procedure)	
+67	367336001	Chemotherapy (procedure)	
+68	234262008	Excision of axillary lymph node (procedure)	
+69	69031006	Excision of breast tissue (procedure)	
+70	33195004	Teleradiotherapy procedure (procedure)	
+71	399208008	Plain chest X-ray	
+72	395142003	Allergy screening test	
+73	46706006	Replacement of contraceptive intrauterine device	
+74	313191000	Injection of adrenaline	
+75	180256009	Subcutaneous immunotherapy	
+76	104435004	Screening for occult blood in feces (procedure)	
+77	274031008	Rectal polypectomy	
+78	169673001	Antenatal RhD antibody screening	
+79	51116004	RhD passive immunization	
+80	40701008	Echocardiography (procedure)	
+81	433112001	Percutaneous mechanical thrombectomy of portal vein using fluoroscopic guidance	
+82	236931002	Methotrexate injection into tubal pregnancy	
+83	19490002	Ankle X-ray	
+84	60027007	X-ray or wrist	
+85	22523008	Vasectomy	
+86	447365002	Insertion of biventricular implantable cardioverter defibrillator	
+87	18286008	Catheter ablation of tissue of heart	
+88	65588006	Premature birth of newborn	
+89	54550000	Seizure Count Cerebral Cortex Electroencephalogram (EEG)	
+90	180207008	Intravenous blood transfusion of packed cells (procedure)	
+91	415070008	Percutaneous coronary intervention	
+92	232717009	Coronary artery bypass grafting	
+93	384700001	Injection of tetanus antitoxin	
+94	24623002	Screening mammography (procedure)	
+95	241615005	Magnetic resonance imaging of breast (procedure)	
+96	396487001	Sentinel lymph node biopsy (procedure)	
+97	443497002	Excision of sentinel lymph node (procedure)	
+98	127783003	Spirometry (procedure)	
+99	80146002	Appendectomy	
+100	410006001	Digital examination of rectum	
+101	392021009	Lumpectomy of breast (procedure)	
+102	112790001	Nasal sinus endoscopy (procedure)	
+103	74016001	Knee X-ray	
+104	699253003	Surgical manipulation of joint of knee	
+105	228557008	Cognitive and behavioral therapy	
+106	445912000	Excision of fallopian tube and surgical removal of ectopic pregnancy	
+107	311791003	Information gathering (procedure)	
+108	65575008	Biopsy of prostate	
+109	90470006	Prostatectomy	
+110	43075005	Partial resection of colon	
+111	703423002	Combined chemotherapy and radiation therapy (procedure)	
+112	418891003	Computed tomography of chest and abdomen	
+113	432231006	Fine needle aspiration biopsy of lung (procedure)	
+114	698354004	Magnetic resonance imaging for measurement of brain volume (procedure)	
+115	398171003	Hearing examination (procedure)	
+116	16335031000119103	High resolution computed tomography of chest without contrast (procedure)	
+117	434158009	Transthoracic three dimensional ultrasonography of heart (procedure)	
+118	433236007	Transthoracic echocardiography	
+119	385798007	Radiation therapy care (regime/therapy)	
+120	15081005	Pulmonary rehabilitation (regime/therapy)	
+121	76164006	Biopsy of colon	
+122	387685009	Surgical manipulation of shoulder joint	
+123	183856001	Referral to hypertension clinic	
+124	268425006	Pelvis X-ray	
+125	265764009	Renal dialysis (procedure)	
+126	88039007	Transplant of lung (procedure)	
+127	91602002	Thoracentesis (procedure)	
+128	177157003	Spontaneous breech delivery	
+129	305433001	Admission to trauma surgery department	
+130	173160006	Diagnostic fiberoptic bronchoscopy (procedure)	
+131	43060002	Intravenous injection (procedure)	
+132	167995008	Sputum microscopy (procedure)	
+133	108290001	Radiation oncology AND/OR radiotherapy (procedure)	
+134	387607004	Construction of diverting colostomy	
+135	112001000119100	positive screening for depression on phq9	
+136	112011000119102	negative screening for depression on phq9	

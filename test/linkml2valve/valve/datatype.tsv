@@ -19,14 +19,12 @@ text					any text	TEXT	VARCHAR(100)	xsd:string	textarea
 trimmed_line	line		match(/\S([^\n]*\S)*/)		a line of text that does not begin or end with whitespace				
 trimmed_text	text		exclude(/^\s+|\s+$/)		text that does not begin or end with whitespace				
 word	nonspace		exclude(/\W/)		a single word: letters, numbers, underscore				
-string	text								
-person_primary_email	text		match(/^\S+@[\S+\.]+\S+/)						
-person_age_in_years	text								
-integer	text								
-date	text								
-float	text								
-boolean	text								
-familialrelationship_related_to	text								
-FamilialRelationshipType	text		in('SIBLING_OF','PARENT_OF','CHILD_OF')						
-GenderType	text		in('nonbinary man','nonbinary woman','transgender woman','transgender man','cisgender man','cisgender woman')						
-DiagnosisType	text								
+string	text				a string				
+person_primary_email	text		match(/^\S+@[\S+\.]+\S+/)		a person_primary_email				
+person_age_in_years	text				a person_age_in_years				
+date	text				a date				
+float	text				a float				
+boolean	text				a boolean				
+FamilialRelationshipType	text		in('SIBLING_OF','PARENT_OF','CHILD_OF')		a FamilialRelationshipType				
+GenderType	text		in('nonbinary man','nonbinary woman','transgender woman','transgender man','cisgender man','cisgender woman')		a GenderType				
+DiagnosisType	text				a DiagnosisType				
