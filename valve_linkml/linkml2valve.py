@@ -57,7 +57,7 @@ def linkml2valve(yaml_schema_path: str, output_dir: str, data_dir: str = None, g
     # Map LinkML schema to VALVE tables
     schema_tables = map_schema(yaml_schema_path, output_dir)
 
-    # Create the actual data table files with some generated data (exclude VALVE metadata rows)
+    # Create the actual data table files with some generated data (exclude VALVE metadata rows and Enum tables)
     if generate_data:
         generate_schema_data(schema_tables["table"]["rows"], schema_tables["column"]["rows"], LOGGER)
 
@@ -84,19 +84,28 @@ def linkml2valve(yaml_schema_path: str, output_dir: str, data_dir: str = None, g
         LOGGER.debug(f"Wrote {len(table_dict['rows'])} rows to '{table_path}'")
         write_dicts2tsv(table_path, table_dict["rows"], VALVE_SCHEMA[table_name]["headers"])
 
+        # TODO add Enum to data tables here
+        if table_name == "table":
+            for table_row in table_dict["rows"]:
+                if table_row["type"] == "enum":
+                    # LOGGER.info(f"Adding Enum data to table '{table_row['table']}'")
+                    enum_table_path = table_row["path"]
+                    enum_table_headers = [c for c in schema_tables["column"]["rows"] if c["table"] == table_row["table"]]
+
+
     # Map LinkML yaml data and serialize to VALVE data TSVs
     if data_dir is not None:
         map_data(yaml_schema_path, data_dir)
 
 
 
-def class2table_row(class_name: str, class_description: str, table_dir: str):
+def class2table_row(class_name: str, class_description: str, table_dir: str, table_type: str):
     # A class is a Table row
     return {
         "table": class_name,
         "path": f'{table_dir}/{class_name}.tsv',
         "description": class_description,
-        "type": None,
+        "type": table_type,
     }
 
 def slot2column_row(slot_name: str,
@@ -194,7 +203,7 @@ def map_schema(yaml_schema_path: str, output_dir: str) -> dict[str, dict[str, st
 
     # Map classes to Table table
     for linkml_class in all_classes:
-        table_dicts.append(class2table_row(linkml_class.name, linkml_class.description, data_table_dir))
+        table_dicts.append(class2table_row(linkml_class.name, linkml_class.description, data_table_dir, None))
 
         # Map slots of (transitively) inherited classes to additional columns for this class in the Column table. (Note: these include slots/attributes inherited from "mixins".)
         inherited_slots = get_inherited_class_slots(linkml_schema, linkml_class)
@@ -230,9 +239,22 @@ def map_schema(yaml_schema_path: str, output_dir: str) -> dict[str, dict[str, st
         if slot_class is None: continue
         map_multivalued_slot(slot, slot_class, column_dicts)
 
-    # Map enums
+    # Map Enums
     for enum in all_enums:
-        map_enum(enum, column_dicts, datatype_dicts, table_dicts, output_dir)
+        # Old way: Map permissible enum values to "condition" in Datatype table
+        # datatype_dicts.append(slot2datatype_row(enum.name, enum.description, None, enum.permissible_values))
+
+        # Map enum to Table table, with a Permissible Value column and IRI/meaning column
+        enum_table = class2table_row(enum.name, enum.description, output_dir, "enum")
+        table_dicts.append(enum_table)
+        # Use the value as the primary key so it can serve as a foreign key
+        column_dicts.append(slot2column_row("permissible_value", enum.name, "Permissible Value", None, None, None, None, False, is_primary_key=True, is_required=True))
+        column_dicts.append(slot2column_row("meaning", enum.name, "CURIE meaning", None, None, None, None, False, False, is_required=True))
+        # Map enum values to rows in the enum table
+        permissible_values = enum.permissible_values
+        enum_row_dicts = [ {"permissible_value": v, "meaning": permissible_values[v].meaning} for v in permissible_values ]
+        write_dicts2tsv(enum_table["path"], enum_row_dicts, ["permissible_value", "meaning"])
+    
 
     # Add "default_range" as a datatype if needed
     if not SCHEMA_DEFAULT_RANGE in [d["datatype"] for d in datatype_dicts]:
@@ -354,20 +376,20 @@ def map_multivalued_slot(slot: SlotDefinition, slot_class: ClassDefinition, colu
 
 
 def map_enum(enum: EnumDefinition, column_dicts: List[dict], datatype_dicts: List[dict], table_dicts: List[dict], valve_dir: str):
-    # Map permissible enum values to "condition" in Datatype table
-    datatype_dicts.append(slot2datatype_row(enum.name, enum.description, None, enum.permissible_values))
+    # Old way: Map permissible enum values to "condition" in Datatype table
+    # datatype_dicts.append(slot2datatype_row(enum.name, enum.description, None, enum.permissible_values))
 
     # Map enum to Table table, with a Permissible Value column and IRI/meaning column
-    # table_dicts.append(class2table_row(enum.name, enum.description, valve_dir))
+    enum_table = class2table_row(enum.name, enum.description, valve_dir, "enum")
+    table_dicts.append(enum_table)
 
-    # TODO: designate enum table "type" as "enum table" ?
-    # column_dicts.append(slot2column_row("permissible_value", enum.name, "Permissible Value", None, None, None, None, False, False, is_required=True))
-    # column_dicts.append(slot2column_row("meaning", enum.name, "IRI Meaning", None, None, None, None, False, False, is_required=True))
+    # Use the value as the primary key so it can serve as a foreign key
+    column_dicts.append(slot2column_row("permissible_value", enum.name, "Permissible Value", None, None, None, None, False, is_primary_key=True, is_required=True))
+    column_dicts.append(slot2column_row("meaning", enum.name, "IRI Meaning", None, None, None, None, False, False, is_required=True))
 
-    # Need to create a primary key so these permissible values can serve as foreign
-    # column_dicts.append(slot2column_row(DEFAULT_PRIMARY_KEY, enum.name, None, None, None, None, None, None, is_primary_key=True, is_required=True))
-
-    # TODO: actually create the enum table with permissible values + IRIs as rows
+    # Return the permissible values as data rows
+    permissible_values = enum.permissible_values
+    return [ {"permissible_value": v, "meaning": permissible_values[v].meaning} for v in permissible_values ]
 
 
 def map_data(yaml_schema_path: str, yaml_data_dir: str):

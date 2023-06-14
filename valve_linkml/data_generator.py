@@ -6,7 +6,7 @@ from typing import List
 from .generate_from_synthea import generate_tables_from_fhir_mapping
 
 def generate_schema_data(data_table_dicts: List[dict], data_column_dicts: List[dict], logger):
-    """Generate data given some data table and column dicts. Don't use this with VALVE config metadata"""
+    """Generate data given some data table and column dicts. Exclude Enum tables. Don't use this with VALVE config metadata."""
     logger.info("Generating data tables...")
 
     # Map some pre-generated data to our data tables if we have the right kind
@@ -16,6 +16,10 @@ def generate_schema_data(data_table_dicts: List[dict], data_column_dicts: List[d
 
     # Create the data tables themselves
     for table_dict in data_table_dicts:
+        table_type = table_dict["type"]
+        if table_type == "enum":
+            continue # Skip enums to avoid overwriting the values
+
         table_name = table_dict["table"]
         table_path = table_dict["path"]
 
