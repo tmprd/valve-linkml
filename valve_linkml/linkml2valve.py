@@ -212,12 +212,17 @@ def map_schema(yaml_schema_path: str, output_dir: str) -> dict[str, dict[str, st
             map_class_slot(linkml_schema, attribute_slot, linkml_class, column_dicts, datatype_dicts, all_classes, all_enums)
 
         # If no identifier slot was found and used as a primary key, we need to make one for this class and add it to the Column table
-        class_primary_key = next((c for c in column_dicts if c["table"] == linkml_class.name and c["structure"] == "primary"), None)
+        mapped_table_column_dicts = [c for c in column_dicts if c["table"] == linkml_class.name]
+        class_primary_key = next((c for c in mapped_table_column_dicts if c["structure"] == "primary"), None)
         if class_primary_key is None:
             LOGGER.info(f"Class '{linkml_class.name}' has no identifier slot. Creating primary key '{DEFAULT_PRIMARY_KEY}' and adding it to the Column table.")
-            # TODO: maybe add this as the first column...
-            column_dicts.append(slot2column_row(DEFAULT_PRIMARY_KEY, linkml_class.name, "generated column", None, None, None, None, is_slot_range_a_class=False, is_primary_key=True, is_required=True))
-
+            # Add new primary key as the first column
+            new_primary_key_column = slot2column_row(DEFAULT_PRIMARY_KEY, linkml_class.name, "generated column", None, None, None, None, is_slot_range_a_class=False, is_primary_key=True, is_required=True)
+            table_columns_index = len(column_dicts)
+            if len(mapped_table_column_dicts) > 0:
+                table_columns_index = column_dicts.index(mapped_table_column_dicts[0])
+            column_dicts.insert(table_columns_index, new_primary_key_column)
+            
     # Map multivalued slots to new columns in the class table of the multivalued slot's range. This has to be done after adding primary keys for missing class identifiers.
     for slot in all_slots:
         if not slot.multivalued: continue
@@ -318,8 +323,7 @@ def map_class_slot(schemaView: SchemaView, slot: SlotDefinition, slot_class: Cla
 
 
 def map_multivalued_slot(slot: SlotDefinition, slot_class: ClassDefinition, column_dicts: List[dict]):
-    """Add a new column to the range class of this slot, where the "structure" is from(<range_clas>.<identifier>)
-    """
+    """Add a new column to the range class of this slot, where the "structure" is from(<range_clas>.<identifier>)"""
     # Ex. Person
     #       - has_medical_history:
     #           multivalued: true
@@ -335,6 +339,9 @@ def map_multivalued_slot(slot: SlotDefinition, slot_class: ClassDefinition, colu
     # Get the primary key of the table that serves as the range of this slot
     slot_class_table_dicts = [c for c in column_dicts if c["table"] == slot_class.name]
     slot_range_class_primary_key_column = next((c for c in slot_class_table_dicts if c["structure"] == "primary"), None)
+    if slot_range_class_primary_key_column is None:
+        raise Exception(f"Cannot map multivalued slot '{slot.name}' with range '{slot.range}' in class '{slot_class.name}'. No primary key found for range class '{slot.range}' but every class table should have a primary key.")
+
     new_column_fk_column = slot_range_class_primary_key_column["column"] # ex. Person.id
     new_column_datatype = slot_range_class_primary_key_column["datatype"] # ex. string
 

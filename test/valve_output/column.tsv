@@ -35,15 +35,15 @@ Organization	founding_date	empty	text
 Organization	founding_location	empty	string	from(Place.id)	
 Place	id		text	primary	
 Place	name	empty	text		
+Address	id		text	primary	generated column
 Address	street	empty	text		
 Address	city	empty	text		
 Address	postal_code	empty	string		
-Address	id		text	primary	generated column
+Event	id		text	primary	generated column
 Event	started_at_time	empty	date		
 Event	ended_at_time	empty	date		
 Event	duration	empty	float		
 Event	is_current	empty	boolean		
-Event	id		text	primary	generated column
 Concept	id		string	primary	
 Concept	name	empty	string		
 Concept	description	empty	string		
@@ -56,22 +56,23 @@ ProcedureConcept	id		string	primary
 ProcedureConcept	name	empty	string		
 ProcedureConcept	description	empty	string		
 ProcedureConcept	image	empty	string		
+Relationship	id		text	primary	generated column
 Relationship	started_at_time	empty	date		
 Relationship	ended_at_time	empty	date		
 Relationship	related_to	empty	text		
 Relationship	type	empty	text		
-Relationship	id		text	primary	generated column
+FamilialRelationship	id		text	primary	generated column
 FamilialRelationship	started_at_time	empty	date		
 FamilialRelationship	ended_at_time	empty	date		
 FamilialRelationship	related_to		string	from(Person.id)	
 FamilialRelationship	type		FamilialRelationshipType		
-FamilialRelationship	id		text	primary	generated column
+EmploymentEvent	id		text	primary	generated column
 EmploymentEvent	started_at_time	empty	date		
 EmploymentEvent	ended_at_time	empty	date		
 EmploymentEvent	duration	empty	float		
 EmploymentEvent	is_current	empty	boolean		
 EmploymentEvent	employed_at	empty	string	from(Organization.id)	
-EmploymentEvent	id		text	primary	generated column
+MedicalEvent	id		text	primary	generated column
 MedicalEvent	started_at_time	empty	date		
 MedicalEvent	ended_at_time	empty	date		
 MedicalEvent	duration	empty	float		
@@ -79,9 +80,8 @@ MedicalEvent	is_current	empty	boolean
 MedicalEvent	in_location	empty	string	from(Place.id)	
 MedicalEvent	diagnosis	empty	string	from(DiagnosisConcept.id)	
 MedicalEvent	procedure	empty	string	from(ProcedureConcept.id)	
-MedicalEvent	id		text	primary	generated column
-WithLocation	in_location	empty	string	from(Place.id)	
 WithLocation	id		text	primary	generated column
+WithLocation	in_location	empty	string	from(Place.id)	
 Container	id		text	primary	generated column
 EmploymentEvent	person	empty	string	from(Person.id)	generated column from multivalued slot Person.has_employment_history
 MedicalEvent	person	empty	string	from(Person.id)	generated column from multivalued slot Person.has_medical_history
