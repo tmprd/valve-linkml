@@ -180,6 +180,7 @@ def map_schema(yaml_schema_path: str, output_dir: str) -> dict[str, dict[str, st
     all_classes = linkml_schema.all_classes().values()
     all_slots = linkml_schema.all_slots().values()
     all_enums = linkml_schema.all_enums().values()
+    all_types = linkml_schema.all_types().values()
     SCHEMA_DEFAULT_RANGE = linkml_schema.schema.default_range
 
     class_count = len(all_classes)
@@ -192,6 +193,10 @@ def map_schema(yaml_schema_path: str, output_dir: str) -> dict[str, dict[str, st
     column_dicts = []
     datatype_dicts = []
 
+    # Map all types to Datatype table
+    for type in all_types:
+        datatype_dicts.append(slot2datatype_row(type.name, None, None, None))
+    
     # Map classes to Table table
     for linkml_class in all_classes:
         table_dicts.append(class2table_row(linkml_class.name, linkml_class.description, data_table_dir))
@@ -233,10 +238,6 @@ def map_schema(yaml_schema_path: str, output_dir: str) -> dict[str, dict[str, st
     # Map enums
     for enum in all_enums:
         map_enum(enum, column_dicts, datatype_dicts, table_dicts, output_dir)
-
-    # Add "default_range" as a datatype if needed
-    if not SCHEMA_DEFAULT_RANGE in [d["datatype"] for d in datatype_dicts]:
-        datatype_dicts.append(slot2datatype_row(SCHEMA_DEFAULT_RANGE, None, None))
 
     # Check invariants
     assert len(table_dicts) >= class_count, f"{class_count} classes mapped to {len(table_dicts)} tables. Expected at least as many tables as classes."
@@ -303,11 +304,6 @@ def map_class_slot(schemaView: SchemaView, slot: SlotDefinition, slot_class: Cla
             LOGGER.info(f"Slot '{slot.name}' has range '{range_class.name}', but '{range_class.name}' has no identifier. Using {range_class.name}.{DEFAULT_PRIMARY_KEY} as the foreign key.")
             range_class_identifier_name = DEFAULT_PRIMARY_KEY
             range_class_identifier_datatype = DEFAULT_PRIMARY_KEY_DATATYPE
-
-    # Map slot range to a datatype only if it's not a class or enum, and we haven't already added it from somewhere else (ex. slot usage)
-    is_slot_range_an_enum = slot.range in [e.name for e in all_enums]
-    if (slot.range is not None) and (not is_slot_range_a_class) and (not is_slot_range_an_enum) and (not slot.range in [d["datatype"] for d in datatype_dicts]):
-        datatype_dicts.append(slot2datatype_row(slot.range, None, None, None))
         
     # Finally map slot to column
     column_dicts.append(slot2column_row(slot.name, 
