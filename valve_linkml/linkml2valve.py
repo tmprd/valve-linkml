@@ -181,7 +181,11 @@ def map_schema(yaml_schema_path: str, output_dir: str) -> dict[str, dict[str, st
     all_slots = linkml_schema.all_slots().values()
     all_enums = linkml_schema.all_enums().values()
     SCHEMA_DEFAULT_RANGE = linkml_schema.schema.default_range
-    LOGGER.debug(f"{len(all_classes)} classes, {len(all_slots)} slots, {len(all_enums)} enums parsed from '{yaml_schema_path}'")
+
+    class_count = len(all_classes)
+    slot_count = len(all_slots)
+    enum_count = len(all_enums)
+    LOGGER.debug(f"{class_count} classes, {slot_count} slots, {enum_count} enums parsed from '{yaml_schema_path}'")
     validate_schema(all_classes, all_slots, all_enums)
 
     table_dicts = []
@@ -228,6 +232,10 @@ def map_schema(yaml_schema_path: str, output_dir: str) -> dict[str, dict[str, st
     # Add "default_range" as a datatype if needed
     if not SCHEMA_DEFAULT_RANGE in [d["datatype"] for d in datatype_dicts]:
         datatype_dicts.append(slot2datatype_row(SCHEMA_DEFAULT_RANGE, None, None))
+
+    # Check invariants
+    assert len(table_dicts) >= class_count, f"{class_count} classes mapped to {len(table_dicts)} tables. Expected at least as many tables as classes."
+    assert len(column_dicts) >= slot_count, f"{slot_count} slots mapped to {len(column_dicts)} columns. Expected at least as many columns as slots."
 
     return {
         "table": {"rows":table_dicts, "path": output_dir + '/table.tsv'},
