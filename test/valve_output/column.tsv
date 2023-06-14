@@ -83,3 +83,8 @@ MedicalEvent	id		text	primary	generated column
 WithLocation	in_location	empty	string	from(Place.id)	
 WithLocation	id		text	primary	generated column
 Container	id		text	primary	generated column
+EmploymentEvent	person	empty	string	from(Person.id)	generated column from multivalued slot Person.has_employment_history
+MedicalEvent	person	empty	string	from(Person.id)	generated column from multivalued slot Person.has_medical_history
+FamilialRelationship	person	empty	string	from(Person.id)	generated column from multivalued slot Person.has_familial_relationships
+Person	container	empty	text	from(Container.id)	generated column from multivalued slot Container.persons
+Organization	container	empty	text	from(Container.id)	generated column from multivalued slot Container.organizations

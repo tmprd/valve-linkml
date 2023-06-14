@@ -20,9 +20,9 @@ def generate_tables_from_fhir_mapping(logger: Logger) -> dict:
         address_error_set = person_error_set[:len(person_error_set)//2]
 
         medicalevent_error_set = generate_error_set(sum(1 for row in encounters), 0.0001)
-        print(f"Adding {len(person_error_set)} errors to Person table")
-        print(f"Adding {len(address_error_set)} errors to Address table")
-        print(f"Adding {len(medicalevent_error_set)} errors to MedicalEvent table")
+        logger.info(f"Adding {len(person_error_set)} errors to Person table")
+        logger.info(f"Adding {len(address_error_set)} errors to Address table")
+        logger.info(f"Adding {len(medicalevent_error_set)} errors to MedicalEvent table")
         # Reset to beginning of files after counting rows
         patients_file.seek(0)
         encounters_file.seek(0)
@@ -37,12 +37,10 @@ def generate_tables_from_fhir_mapping(logger: Logger) -> dict:
             person_address = map_fhir_patient2address(patient, index)            
             person = map_fhir_patient2person(patient, index, person_address)
             if index in person_error_set:
-                logger.info(f"Adding fake invalid data to Person {person['id']}")
                 person["gender"] = "invalid-example"
                 person["primary_email"] = "invalid-example.net"
 
             if index in address_error_set:
-                logger.info(f"Adding fake invalid data to Address {person_address['id']}")
                 person_address["id"] = "invalid-example"
 
             person_dicts.append(person)
@@ -56,9 +54,9 @@ def generate_tables_from_fhir_mapping(logger: Logger) -> dict:
         for index, event in enumerate(encounters):
             if index == 0: continue # skip header row
             procedure = random.choice(procedure_dicts)
-            medicalevent = map_fhir_encounter2medical_event(event, index, procedure["id"])
+            medicalevent_person = random.choice(person_dicts) # this information was lost because we removed "has_medical_history" from Person, so just pick randomly
+            medicalevent = map_fhir_encounter2medical_event(event, index, procedure["id"], medicalevent_person["id"])
             if index in medicalevent_error_set:
-                logger.info(f"Adding fake invalid data to MedicalEvent {medicalevent['id']}")
                 medicalevent["procedure"] = "invalid-example"
             medicalevents_dicts.append(medicalevent)
 
@@ -89,7 +87,7 @@ def map_fhir_patient2address(fhir_patient: dict, index: str):
         "id": index # generated ID
     }
 
-def map_fhir_encounter2medical_event(fhir_encounter: dict, index: str, procedure_fk: str):
+def map_fhir_encounter2medical_event(fhir_encounter: dict, index: str, procedure_fk: str, person_fk: str):
     # Id, START, STOP, PATIENT, ORGANIZATION, PROVIDER, PAYER, ENCOUNTERCLASS, CODE, DESCRIPTION, BASE_ENCOUNTER_COST, TOTAL_CLAIM_COST, PAYER_COVERAGE, REASONCODE, REASONDESCRIPTION
     # started_at_time	ended_at_time	duration	is_current	in_location	diagnosis	procedure
     return {
@@ -99,7 +97,7 @@ def map_fhir_encounter2medical_event(fhir_encounter: dict, index: str, procedure
         "procedure": procedure_fk,
         "id": index, # generated ID
         # Add a link to person id as part of multivalued mapping. Just use random for now
-        # "person": 
+        "person": person_fk
     }
 
 def map_fhir_procedure2procedure_concept(fhir_procedure: dict, index: str):

@@ -7,7 +7,7 @@ from .generate_from_synthea import generate_tables_from_fhir_mapping
 
 def generate_schema_data(data_table_dicts: List[dict], data_column_dicts: List[dict], logger):
     """Generate data given some data table and column dicts. Don't use this with VALVE config metadata"""
-    print("Generating data tables...")
+    logger.info("Generating data tables...")
 
     # Map some pre-generated data to our data tables if we have the right kind
     table_names = [t["table"] for t in data_table_dicts]
@@ -37,7 +37,7 @@ def generate_schema_data(data_table_dicts: List[dict], data_column_dicts: List[d
                     # Write generated data to the table
                     writer.writerows(matching_generated_data)
                 
-            print(f"Wrote to '{table_path}'")
+            logger.info(f"Wrote data to '{table_path}'")
 
             # Experimental generation
             # create_generation_prompt(table_name, table_columns)

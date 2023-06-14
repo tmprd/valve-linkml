@@ -1,7 +1,7 @@
 street	city	postal_code	id
 427 Balistreri Way Unit 19	Chicopee	01013	1
 422 Farrell Path Unit 69	Somerville	02143	2
-1056 Harris Lane Suite 70	Chicopee	01020	3
+1056 Harris Lane Suite 70	Chicopee	01020	invalid-example
 999 Kuhn Forge	Lowell	01851	4
 1050 Lindgren Extension Apt 38	Boston	02135	5
 888 Hickle Ferry Suite 38	Springfield	01106	6
@@ -11,7 +11,7 @@ street	city	postal_code	id
 1048 Skiles Trailer	Walpole	02081	10
 428 Wiza Glen Unit 91	Springfield	01104	11
 181 Feest Passage Suite 64	Medfield	02052	12
-118 Bailey Orchard Suite 34	Needham		invalid-example
+118 Bailey Orchard Suite 34	Needham		13
 1060 Hansen Overpass Suite 86	Boston	02118	14
 970 Grant Highlands	Foxborough		15
 585 Greenfelder Camp	Quincy	02169	16
@@ -30,7 +30,7 @@ street	city	postal_code	id
 255 Ondricka Common	Deerfield		29
 913 Schiller Well Apt 80	Burlington	01803	30
 703 Stehr Walk	Chelmsford		31
-257 Jerde Rue	Quincy	02170	invalid-example
+257 Jerde Rue	Quincy	02170	32
 297 Fritsch Estate Apt 24	Lynnfield		33
 844 Hammes Byway	Framingham	01702	34
 765 Harber Club	Winchester	01890	35
@@ -50,7 +50,7 @@ street	city	postal_code	id
 385 Sipes Orchard Apt 71	Brockton	02301	49
 837 Mills Dam	Somerville	02140	50
 873 Hodkiewicz Dam Unit 1	Bridgewater		51
-135 Runolfsdottir Orchard Suite 11	Norton		invalid-example
+135 Runolfsdottir Orchard Suite 11	Norton		52
 546 Kuhlman Mission	Lynn	01940	53
 618 Harber Annex	Southborough		54
 341 Langosh Meadow Unit 31	Boston	02122	55
@@ -125,13 +125,13 @@ street	city	postal_code	id
 846 Marvin Approach Unit 12	Lowell	01854	124
 1072 Schuster Alley Suite 10	Clinton		125
 167 Bosco Boulevard Unit 9	Lynn	01904	126
-971 Balistreri Vale Unit 75	Southborough		invalid-example
+971 Balistreri Vale Unit 75	Southborough		127
 356 Kuhn Grove Suite 62	Quincy		128
 690 Stark Vista	Leyden		129
 349 Dooley Trace	Hampden		130
 389 Beatty Plaza Apt 32	Milton	02186	131
 915 Keeling Esplanade	Westport		132
-848 Murray Viaduct Apt 39	Boston	02125	133
+848 Murray Viaduct Apt 39	Boston	02125	invalid-example
 864 Legros Alley	Holliston		134
 724 Pollich Arcade Apt 45	Clinton		135
 1013 Hagenes Ferry Suite 86	Middleton		136
@@ -253,7 +253,7 @@ street	city	postal_code	id
 609 Schimmel View	Agawam	01030	252
 1068 Orn Trailer	Springfield	01107	253
 413 Crona Walk	Pembroke		254
-686 Shields Dam	Easthampton		255
+686 Shields Dam	Easthampton		invalid-example
 900 Friesen Extension Unit 77	Boston	02126	256
 776 Senger Junction Suite 18	Peabody	01940	257
 154 Leannon Gardens Suite 18	West Springfield	01089	258
@@ -284,7 +284,7 @@ street	city	postal_code	id
 967 Rodriguez Parade	Sudbury		283
 801 Block Lane Apt 35	Boston	02128	284
 805 Toy Parade Unit 87	West Springfield		285
-764 Feil Route	Boston	02108	invalid-example
+764 Feil Route	Boston	02108	286
 448 Langworth Trailer Suite 29	West Springfield		287
 468 Smitham Union Suite 32	Middleborough		288
 783 Hessel Knoll	Manchester-by-the-Sea		289
@@ -325,7 +325,7 @@ street	city	postal_code	id
 319 McKenzie Bypass Unit 36	Milton		324
 934 Little Crossroad Apt 52	Fitchburg		325
 914 Wyman Dam	Waltham		326
-578 Welch Trace Unit 19	Bridgewater		327
+578 Welch Trace Unit 19	Bridgewater		invalid-example
 816 Dickinson Union Apt 15	Brookline	02446	328
 769 DuBuque Corner	Stoughton		329
 528 Swift Run Apt 95	West Springfield		330
@@ -504,7 +504,7 @@ street	city	postal_code	id
 1075 Gutkowski Highlands	Stow		503
 487 Schneider Ferry Unit 62	Boston	02120	504
 611 O'Kon Terrace Suite 94	Waltham		505
-1044 Streich Camp Suite 18	Millis		506
+1044 Streich Camp Suite 18	Millis		invalid-example
 1017 Spencer Row	Marblehead	01945	507
 239 Krajcik Brook	Boston	02128	508
 1026 Boehm Highlands	Uxbridge		509

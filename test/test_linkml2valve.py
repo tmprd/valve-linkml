@@ -7,4 +7,4 @@ import valve_linkml.linkml2valve
 base_dir = "test/"
 input_file = os.path.join(base_dir, "linkml_input", "personinfo.yaml")
 output_dir = os.path.join(base_dir, "valve_output")
-valve_linkml.linkml2valve.linkml2valve(input_file, output_dir, data_dir=None, generate_data=True)
+valve_linkml.linkml2valve.linkml2valve(input_file, output_dir, data_dir=None, generate_data=True, log_verbosely=True)
