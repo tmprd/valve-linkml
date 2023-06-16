@@ -57,7 +57,7 @@ def linkml2valve(yaml_schema_path: str, output_dir: str, data_dir: str = None, g
     # Map LinkML schema to VALVE tables
     schema_tables = map_schema(yaml_schema_path, output_dir)
 
-    # Create the actual data table files with some generated data (exclude VALVE metadata rows)
+    # Create the actual data table files with some generated data (exclude VALVE metadata rows and Enum tables)
     if generate_data:
         generate_schema_data(schema_tables["table"]["rows"], schema_tables["column"]["rows"], LOGGER)
 
@@ -83,6 +83,15 @@ def linkml2valve(yaml_schema_path: str, output_dir: str, data_dir: str = None, g
         table_path = table_dict["path"]
         LOGGER.debug(f"Wrote {len(table_dict['rows'])} rows to '{table_path}'")
         write_dicts2tsv(table_path, table_dict["rows"], VALVE_SCHEMA[table_name]["headers"])
+
+        # TODO add Enum to data tables here
+        if table_name == "table":
+            for table_row in table_dict["rows"]:
+                if table_row["type"] == "enum":
+                    # LOGGER.info(f"Adding Enum data to table '{table_row['table']}'")
+                    enum_table_path = table_row["path"]
+                    enum_table_headers = [c for c in schema_tables["column"]["rows"] if c["table"] == table_row["table"]]
+
 
     # Map LinkML yaml data and serialize to VALVE data TSVs
     if data_dir is not None:
@@ -113,8 +122,8 @@ def datatype_row(slot_name: str, slot_description, slot_pattern: str, slot_enum_
         "datatype": slot_name,
         "parent": DEFAULT_PARENT_DATATYPE,
         "transform": None,
-        # A slot's pattern, or the permissible values of a slot's enum, maps to a Datatype "condition"
-        "condition": (f"match(/{slot_pattern}/)" if slot_pattern else None) or (f"in({format_enum_str(slot_enum_values)})" if slot_enum_values else None),
+        # A slot's pattern maps to a Datatype "condition"
+        "condition": (f"match(/{slot_pattern}/)" if slot_pattern else None),
         "structure": None, 
         "description": slot_description or f"a {slot_name}", # default to name if no description
         "SQLite type": None, # TODO
@@ -205,9 +214,19 @@ def map_schema(yaml_schema_path: str, output_dir: str) -> dict[str, dict[str, st
         if slot_class is None: continue
         map_multivalued_slot(slot, slot_class, all_column_rows)
 
-    # Map enums
+    # Map Enums
     for enum in all_enums:
-        map_enum(enum, all_column_rows, datatype_rows, table_rows, output_dir)
+        # Map enum to Table table, with a Permissible Value column and IRI/meaning column
+        enum_table = table_row(enum.name, enum.description, output_dir)
+        table_rows.append(enum_table)
+        # Use the value as the primary key so it can serve as a foreign key
+        all_column_rows.append(column_row("permissible_value", enum.name, "Permissible Value", DEFAULT_DATATYPE, "primary", is_required=True))
+        all_column_rows.append(column_row("meaning", enum.name, "CURIE meaning", DEFAULT_DATATYPE, "primary", is_required=True))
+        # Map enum values to rows in the enum table
+        permissible_values = enum.permissible_values
+        enum_row_dicts = [ {"permissible_value": v, "meaning": permissible_values[v].meaning} for v in permissible_values ]
+        write_dicts2tsv(enum_table["path"], enum_row_dicts, ["permissible_value", "meaning"])
+    
 
     # Check invariants
     assert len(table_rows) >= class_count, f"{class_count} classes mapped to {len(table_rows)} tables. Expected at least as many tables as classes."
@@ -302,24 +321,6 @@ def map_multivalued_slot(slot: SlotDefinition, slot_class: ClassDefinition, colu
     column_rows.append(column_row(new_column_name, new_column_table_name, f"generated column from multivalued slot {slot_class.name}.{slot.name}", 
                                         new_column_datatype, new_column_structure, slot.required))
 
-
-def map_enum(enum: EnumDefinition, column_rows: List[dict], datatype_rows: List[dict], table_rows: List[dict], valve_dir: str):
-    # Map permissible enum values to "condition" in Datatype table
-    datatype_rows.append(datatype_row(enum.name, enum.description, None, enum.permissible_values))
-
-    # Map enum to Table table, with a Permissible Value column and IRI/meaning column
-    # table_rows.append(table_row(enum.name, enum.description, valve_dir))
-
-    # TODO: designate enum table "type" as "enum table" ?
-    # column_rows.append(column_row("permissible_value", enum.name, "Permissible Value", None, None, None, None, False, False, is_required=True))
-    # column_rows.append(column_row("meaning", enum.name, "IRI Meaning", None, None, None, None, False, False, is_required=True))
-
-    # Need to create a primary key so these permissible values can serve as foreign
-    # column_rows.append(column_row(DEFAULT_PRIMARY_KEY, enum.name, None, None, None, None, None, None, is_primary_key=True, is_required=True))
-
-    # TODO: actually create the enum table with permissible values + IRIs as rows
-
-
 def map_data(yaml_schema_path: str, yaml_data_dir: str):
     raise NotImplementedError("LinkML data mapping not implemented yet")
 
@@ -341,11 +342,11 @@ def get_identifier_or_key_slot(sv: SchemaView, cn: ClassDefinitionName) -> Optio
                 return s
         return None
 
-def from_structure(table_name: str, column_name: str):
-    return f'from({table_name}.{column_name})'
+def from_structure(table_name: str, column_name: str): return f'from({table_name}.{column_name})'
 
-def format_enum_str(enum_values: List[str]):
-    return ','.join([f"'{v}'" for v in enum_values])
+def format_enum_datatype_condition(enum_values: List[str]): return f"in({format_enum_str(enum_values)})"
+    
+def format_enum_str(enum_values: List[str]): return ','.join([f"'{v}'" for v in enum_values])
 
 def validate_schema(classes: List[ClassDefinition], slots: List[SlotDefinition], enums: List[EnumDefinition]):
     # Check for slots not associated to a class

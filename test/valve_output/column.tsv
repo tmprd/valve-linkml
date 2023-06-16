@@ -88,3 +88,9 @@ MedicalEvent	person	empty	text	from(Person.id)	generated column from multivalued
 FamilialRelationship	person	empty	text	from(Person.id)	generated column from multivalued slot Person.has_familial_relationships
 Person	container	empty	string	from(Container.id)	generated column from multivalued slot Container.persons
 Organization	container	empty	string	from(Container.id)	generated column from multivalued slot Container.organizations
+FamilialRelationshipType	permissible_value		text	primary	Permissible Value
+FamilialRelationshipType	meaning		text	primary	CURIE meaning
+GenderType	permissible_value		text	primary	Permissible Value
+GenderType	meaning		text	primary	CURIE meaning
+DiagnosisType	permissible_value		text	primary	Permissible Value
+DiagnosisType	meaning		text	primary	CURIE meaning
