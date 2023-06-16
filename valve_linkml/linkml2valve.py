@@ -163,15 +163,15 @@ def slot2column_structure(slot_range_name: str, slot_range_identifier_name: str,
     else:
         return None
 
-def slot2datatype_row(slot_name: str, slot_description, slot_pattern: str, slot_enum_values: List[str] = None):
+def slot2datatype_row(slot_name: str, slot_description, slot_pattern: str):
     # A class-specific slot_usage maps to a Datatype row
     # TODO Map slot minimum_value & maximum_value to ...?
     return {
         "datatype": slot_name,
         "parent": DEFAULT_PARENT_DATATYPE,
         "transform": None,
-        # A slot's pattern, or the permissible values of a slot's enum, maps to a Datatype "condition"
-        "condition": (f"match(/{slot_pattern}/)" if slot_pattern else None) or (f"in({format_enum_str(slot_enum_values)})" if slot_enum_values else None),
+        # A slot's pattern maps to a Datatype "condition"
+        "condition": (f"match(/{slot_pattern}/)" if slot_pattern else None),
         "structure": None, 
         "description": slot_description or f"a {slot_name}", # default to name if no description
         "SQLite type": None, # TODO
@@ -204,7 +204,7 @@ def map_schema(yaml_schema_path: str, output_dir: str) -> dict[str, dict[str, st
 
     # Map all types to Datatype table
     for type in all_types:
-        datatype_dicts.append(slot2datatype_row(type.name, None, None, None))
+        datatype_dicts.append(slot2datatype_row(type.name, None, None))
     
     # Map classes to Table table
     for linkml_class in all_classes:
@@ -246,9 +246,6 @@ def map_schema(yaml_schema_path: str, output_dir: str) -> dict[str, dict[str, st
 
     # Map Enums
     for enum in all_enums:
-        # Old way: Map permissible enum values to "condition" in Datatype table
-        # datatype_dicts.append(slot2datatype_row(enum.name, enum.description, None, enum.permissible_values))
-
         # Map enum to Table table, with a Permissible Value column and IRI/meaning column
         enum_table = class2table_row(enum.name, enum.description, output_dir, "enum")
         table_dicts.append(enum_table)
@@ -304,7 +301,7 @@ def map_class_slot(schemaView: SchemaView, slot: SlotDefinition, slot_class: Cla
         elif slot_usage_enum is None:
             # Create a new Datatype for this slot usage. Then set that as the "datatype" in the Column table.
             slot_usage_datatype = f"{slot_class.name.lower()}_{slot_usage.name}"
-            datatype_dicts.append(slot2datatype_row(slot_usage_datatype, None, slot_usage.pattern, None))
+            datatype_dicts.append(slot2datatype_row(slot_usage_datatype, None, slot_usage.pattern))
     
         # If slot usage is required, then the slot is required in the context of this class
         is_slot_required = slot_usage.required
@@ -370,24 +367,6 @@ def map_multivalued_slot(slot: SlotDefinition, slot_class: ClassDefinition, colu
                                         slot_usage_datatype=None, 
                                         is_slot_range_a_class=True, is_primary_key=False, is_required=slot.required))
 
-
-def map_enum(enum: EnumDefinition, column_dicts: List[dict], datatype_dicts: List[dict], table_dicts: List[dict], valve_dir: str):
-    # Old way: Map permissible enum values to "condition" in Datatype table
-    # datatype_dicts.append(slot2datatype_row(enum.name, enum.description, None, enum.permissible_values))
-
-    # Map enum to Table table, with a Permissible Value column and IRI/meaning column
-    enum_table = class2table_row(enum.name, enum.description, valve_dir, "enum")
-    table_dicts.append(enum_table)
-
-    # Use the value as the primary key so it can serve as a foreign key
-    column_dicts.append(slot2column_row("permissible_value", enum.name, "Permissible Value", None, None, None, None, False, is_primary_key=True, is_required=True))
-    column_dicts.append(slot2column_row("meaning", enum.name, "IRI Meaning", None, None, None, None, False, False, is_required=True))
-
-    # Return the permissible values as data rows
-    permissible_values = enum.permissible_values
-    return [ {"permissible_value": v, "meaning": permissible_values[v].meaning} for v in permissible_values ]
-
-
 def map_data(yaml_schema_path: str, yaml_data_dir: str):
     raise NotImplementedError("LinkML data mapping not implemented yet")
 
@@ -409,8 +388,9 @@ def get_identifier_or_key_slot(sv: SchemaView, cn: ClassDefinitionName) -> Optio
                 return s
         return None
 
-def format_enum_str(enum_values: List[str]):
-    return ','.join([f"'{v}'" for v in enum_values])
+def format_enum_datatype_condition(enum_values: List[str]): return f"in({format_enum_str(enum_values)})"
+    
+def format_enum_str(enum_values: List[str]): return ','.join([f"'{v}'" for v in enum_values])
 
 def validate_schema(classes: List[ClassDefinition], slots: List[SlotDefinition], enums: List[EnumDefinition]):
     # Check for slots not associated to a class
