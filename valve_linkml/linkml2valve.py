@@ -175,21 +175,14 @@ def map_class_slots(linkml_schema: SchemaView, linkml_class: ClassDefinition,
             all_datatype_rows + new_datatype_rows]
 
 
-# Map the range of a class-specific slot_usage to a new Datatype row. Example: "primary_email" in Person uses a "person_primary_email" datatype.
-# If slot_usage has a class as its range, then map that to a from() foreign key "structure" in the Column table.
-# TODO: If slot_usage has an enum as its range, then map that to a from() foreign key "structure" in the Column table.
 def slot_usage2datatype_row(slot_usage: SlotDefinition, slot_class: ClassDefinition, all_classes: List[ClassDefinition], all_enums: List[EnumDefinition]) -> Optional[dict]:
-    # A class-specific slot_usage maps to a Datatype row only if its range is not a class or enum
-    slot_usage_class = next((c for c in all_classes if c.name == slot_usage.range), None)
-    slot_usage_enum = next((e for e in all_enums if e.name == slot_usage.range), None)
-    if slot_usage_class is not None or slot_usage_enum is not None:
-        # TODO get datatype of identifier of range class of slot usage
-        # slot_usage_datatype = ...
+    """Map the range of a class-specific slot_usage to a new Datatype row if the range is not a class or enum. \n
+    Example: "primary_email" in Person uses a "person_primary_email" datatype."""
+    if is_range_enum(slot_usage.range) or is_range_class(slot_usage.range):
         return None
-    else:
-        # Create a new Datatype for this slot usage. Then set that as the "datatype" in the Column table.
-        slot_usage_datatype = f"{slot_class.name.lower()}_{slot_usage.name}"
-        return datatype_row(slot_usage_datatype, None, slot_usage.pattern)
+    # Create a new Datatype for this slot usage. Then set that as the "datatype" in the Column table.
+    slot_usage_datatype = f"{slot_class.name.lower()}_{slot_usage.name}"
+    return datatype_row(slot_usage_datatype, None, slot_usage.pattern)
 
 
 def generate_table_primary_key(linkml_class: ClassDefinition, column_rows: List[dict]) -> List[dict]:
@@ -250,6 +243,7 @@ def map_class_slot(schemaView: SchemaView, slot: SlotDefinition, slot_class: Cla
 
     # Map slot range to the Column's datatype and structure
     elif slot.range is not None:
+        # Note: This includes slot_usage ranges for this class slot
         range_class = next((c for c in all_classes if c.name == slot.range), None)
         if range_class is None:
             range_enum = next((e for e in all_enums if e.name == slot.range), None)
@@ -339,6 +333,12 @@ def get_identifier_or_key_slot(sv: SchemaView, cn: ClassDefinitionName) -> Optio
 
 def is_slot_inherited(linkml_class: ClassDefinition, slot: SlotDefinition) -> bool:
     return (slot.name not in linkml_class.slots) and (slot.name not in linkml_class.attributes)
+
+def is_range_enum(range_name: str, all_enums: List[EnumDefinition]) -> bool:
+    return any(e for e in all_enums if e.name == range_name)
+
+def is_range_class(range_name: str, all_classes: List[ClassDefinition]) -> bool:
+    return any(c for c in all_classes if c.name == range_name)
 
 def is_enum_table(table_name, enum_primary_key, column_dicts):
     return any(c for c in column_dicts if c["table"] == table_name and c["column"] == enum_primary_key)
