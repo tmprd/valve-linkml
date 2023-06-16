@@ -12,16 +12,16 @@ column	description	empty	description		a description of this column
 datatype	datatype		datatype_name	primary	the name of this datatype
 datatype	parent	empty	datatype_name	tree(datatype)	the parent datatype
 datatype	condition	empty	datatype_condition		
-NamedThing	id		text	primary	
-NamedThing	name	empty	text		
-NamedThing	description	empty	text		
-NamedThing	image	empty	text		
+NamedThing	id	empty	text	primary	
+NamedThing	name	empty	string		
+NamedThing	description	empty	string		
+NamedThing	image	empty	string		
 Person	id		text	primary	
 Person	name	empty	string		
 Person	description	empty	string		
 Person	image	empty	string		
 Person	primary_email	empty	person_primary_email		
-Person	birth_date	empty	text		
+Person	birth_date	empty	string		
 Person	age_in_years	empty	person_age_in_years		
 Person	gender	empty	text	from(GenderType.permissible_value)	
 Person	current_address	empty	text	from(Address.id)	The address at which a person currently lives
@@ -30,14 +30,14 @@ Organization	id		text	primary
 Organization	name	empty	string		
 Organization	description	empty	string		
 Organization	image	empty	string		
-Organization	mission_statement	empty	text		
-Organization	founding_date	empty	text		
+Organization	mission_statement	empty	string		
+Organization	founding_date	empty	string		
 Organization	founding_location	empty	string	from(Place.id)	
 Place	id		text	primary	
-Place	name	empty	text		
+Place	name	empty	string		
 Address	id		string	primary	generated column
-Address	street	empty	text		
-Address	city	empty	text		
+Address	street	empty	string		
+Address	city	empty	string		
 Address	postal_code	empty	string		
 Event	id		string	primary	generated column
 Event	started_at_time	empty	date		
@@ -59,8 +59,8 @@ ProcedureConcept	image	empty	string
 Relationship	id		string	primary	generated column
 Relationship	started_at_time	empty	date		
 Relationship	ended_at_time	empty	date		
-Relationship	related_to	empty	text		
-Relationship	type	empty	text		
+Relationship	related_to	empty	string		
+Relationship	type	empty	string		
 FamilialRelationship	id		string	primary	generated column
 FamilialRelationship	started_at_time	empty	date		
 FamilialRelationship	ended_at_time	empty	date		

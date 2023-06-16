@@ -61,14 +61,14 @@ def linkml2valve(yaml_schema_path: str, output_dir: str, data_dir: str = None, g
 
 def serialize_valve_tables(schema_tables: List[dict], data_tables: List[dict]):
     # Serialize the combined VALVE schema and mapped LinkML schema to TSVs
-    for meta_table_name in schema_tables:
-        table_dict = schema_tables[meta_table_name]
+    for schema_table_name in schema_tables:
+        table_dict = schema_tables[schema_table_name]
         table_path = table_dict["path"]
         LOGGER.debug(f"Wrote {len(table_dict['rows'])} rows to '{table_path}'")
-        write_dicts2tsv(table_path, table_dict["rows"], VALVE_SCHEMA[meta_table_name]["headers"])
+        write_dicts2tsv(table_path, table_dict["rows"], VALVE_SCHEMA[schema_table_name]["headers"])
 
         # Serialize Enum tables listed in the Table table, and add data to them
-        if meta_table_name == "table":
+        if schema_table_name == "table":
             # For each table in the metatable
             for table_row in table_dict["rows"]:
                 table_name = table_row["table"]
@@ -119,7 +119,7 @@ def map_schema(yaml_schema_path: str, output_dir: str) -> dict[str, dict[str, st
     all_column_rows = map_multivalued_slots(all_slots, all_classes, all_column_rows)
 
     # Map Enums
-    data_tables = map_enums(all_enums, all_table_rows, all_column_rows, output_dir)
+    all_table_rows, all_column_rows, data_tables = map_enums(all_enums, all_table_rows, all_column_rows, output_dir)
 
     # Check invariants
     assert len(all_table_rows) >= len(all_classes), f"{len(all_classes)} classes mapped to {len(all_table_rows)} tables. Expected at least as many tables as classes."
@@ -144,36 +144,28 @@ def map_class_slots(linkml_schema: SchemaView, linkml_class: ClassDefinition,
     new_datatype_rows = []
     class_has_primary_key = False
 
-    # Map slots of (transitively) inherited classes to additional rows for this class in the Column table. (Note: these include slots/attributes inherited from "mixins".)
-    inherited_slots = get_inherited_class_slots(linkml_schema, linkml_class)
-    for inherited_slot in inherited_slots:
-        new_column_row = map_class_slot(linkml_schema, inherited_slot, linkml_class, all_classes, all_enums)   
-        # Add new column row
-        if new_column_row is not None:
-            new_column_rows.append(new_column_row)
-            class_has_primary_key = class_has_primary_key or (new_column_row["structure"] == PRIMARY_KEY_STRUCTURE)
+    # Map class slots and attributes, including inherited ones, to Column table rows. (Note: these include slots/attributes inherited from "mixins".)
+    all_class_slots = get_all_class_slots(linkml_schema, linkml_class)
+    for slot in all_class_slots:
 
-    # # Map class slots and attributes to Column table rows
-    slot_names = list(linkml_class.slots) + list(linkml_class.attributes)
-    for slot_name in slot_names:
         # Map slot to Column table row
-        slot = next((s for s in all_slots if s.name == slot_name), None) # TODO check if specified class slot isn't in the list of all slots ...
         new_column_row = map_class_slot(linkml_schema, slot, linkml_class, all_classes, all_enums)
+        if new_column_row is None: continue
         
-        if new_column_row is not None:
-            class_has_primary_key = class_has_primary_key or (new_column_row["structure"] == PRIMARY_KEY_STRUCTURE)
-            # Map slot usage to Datatype table row if its range isn't a class or enum. This should be the dataype of the Column row.
-            slot_usage = linkml_class.slot_usage.get(slot_name)
-            if slot_usage:
-                new_datatype_row = slot_usage2datatype_row(slot_usage, linkml_class, all_classes, all_enums)
-                if new_datatype_row:
-                    # Update datatype of new column row
-                    new_column_row["datatype"] = new_datatype_row["datatype"]
-                    # Add new datatype row
-                    new_datatype_rows.append(new_datatype_row)
+        class_has_primary_key = class_has_primary_key or (new_column_row["structure"] == PRIMARY_KEY_STRUCTURE)
 
-            # Add new column row
-            new_column_rows.append(new_column_row)
+        # Map slot usage to Datatype table row if its range isn't a class or enum. This should be the dataype of the Column row.
+        slot_usage = linkml_class.slot_usage.get(slot.name)
+        if slot_usage:
+            new_datatype_row = slot_usage2datatype_row(slot_usage, linkml_class, all_classes, all_enums)
+            if new_datatype_row:
+                # Update datatype of new column row
+                new_column_row["datatype"] = new_datatype_row["datatype"]
+                # Add new datatype row
+                new_datatype_rows.append(new_datatype_row)
+
+        # Add new column row
+        new_column_rows.append(new_column_row)
 
     # If no identifier slot was found and used as a primary key, we need to make one for this class and add it to the Column table
     if not class_has_primary_key:
@@ -181,45 +173,6 @@ def map_class_slots(linkml_schema: SchemaView, linkml_class: ClassDefinition,
     
     return [all_column_rows + new_column_rows, 
             all_datatype_rows + new_datatype_rows]
-
-
-def generate_table_primary_key(linkml_class: ClassDefinition, column_rows: List[dict]) -> List[dict]:
-    LOGGER.info(f"Class '{linkml_class.name}' has no identifier slot. Creating primary key '{DEFAULT_PRIMARY_KEY}' and adding it to the Column table.")
-    # Add new primary key as the first column
-    mapped_table_column_rows = [c for c in column_rows if c["table"] == linkml_class.name]
-    new_primary_key_column = column_row(DEFAULT_PRIMARY_KEY, linkml_class.name, "generated column",
-                                        SCHEMA_DEFAULT_RANGE, PRIMARY_KEY_STRUCTURE, is_required=True)
-    print(new_primary_key_column)
-    table_index = column_rows.index(mapped_table_column_rows[0]) if len(mapped_table_column_rows) > 0 else len(column_rows)
-    return column_rows[:table_index] + [new_primary_key_column] + column_rows[table_index:]
-    
-
-def map_multivalued_slots(all_slots: List[SlotDefinition], all_classes: List[ClassDefinition], all_column_rows: List[dict]) -> List[dict]:
-    column_rows = []
-    for slot in all_slots:
-        if not slot.multivalued: continue
-        slot_class = next((c for c in all_classes if slot.name in c.slots), None)
-        if slot_class is None: continue
-        column_rows.append(map_multivalued_slot(slot, slot_class, all_column_rows))
-    return all_column_rows + column_rows
-
-
-def map_enums(all_enums: List[EnumDefinition], table_rows: List[dict], all_column_rows: List[dict], output_dir: str) -> List[dict]:
-    data_tables = []
-    for enum in all_enums:
-        # Map enum to Table table, with a Permissible Value column and IRI/meaning column
-        enum_table = table_row(enum.name, enum.description, output_dir)
-        table_rows.append(enum_table)
-        # Use the value as the primary key so it can serve as a foreign key
-        all_column_rows.append(column_row(ENUM_PRIMARY_KEY, enum.name, "Permissible Value", ENUM_PRIMARY_KEY_DATATYPE, PRIMARY_KEY_STRUCTURE, is_required=True))
-        all_column_rows.append(column_row("meaning", enum.name, "CURIE meaning", ENUM_MEANING_DATATYPE, None, is_required=False))
-        # Map enum values to rows in the enum table
-        permissible_values = enum.permissible_values
-        data_tables.append({
-            "table": enum.name,
-            "rows": [ {ENUM_PRIMARY_KEY: v, "meaning": permissible_values[v].meaning} for v in permissible_values ],
-        })
-    return data_tables
 
 
 # Map the range of a class-specific slot_usage to a new Datatype row. Example: "primary_email" in Person uses a "person_primary_email" datatype.
@@ -237,6 +190,47 @@ def slot_usage2datatype_row(slot_usage: SlotDefinition, slot_class: ClassDefinit
         # Create a new Datatype for this slot usage. Then set that as the "datatype" in the Column table.
         slot_usage_datatype = f"{slot_class.name.lower()}_{slot_usage.name}"
         return datatype_row(slot_usage_datatype, None, slot_usage.pattern)
+
+
+def generate_table_primary_key(linkml_class: ClassDefinition, column_rows: List[dict]) -> List[dict]:
+    LOGGER.info(f"Class '{linkml_class.name}' has no identifier slot. Creating primary key '{DEFAULT_PRIMARY_KEY}' and adding it to the Column table.")
+    # Add new primary key as the first column
+    mapped_table_column_rows = [c for c in column_rows if c["table"] == linkml_class.name]
+    new_primary_key_column = column_row(DEFAULT_PRIMARY_KEY, linkml_class.name, "generated column",
+                                        SCHEMA_DEFAULT_RANGE, PRIMARY_KEY_STRUCTURE, is_required=True)
+    table_index = column_rows.index(mapped_table_column_rows[0]) if len(mapped_table_column_rows) > 0 else len(column_rows)
+    return column_rows[:table_index] + [new_primary_key_column] + column_rows[table_index:]
+    
+
+def map_multivalued_slots(all_slots: List[SlotDefinition], all_classes: List[ClassDefinition], all_column_rows: List[dict]) -> List[dict]:
+    column_rows = []
+    for slot in all_slots:
+        if not slot.multivalued: continue
+        slot_class = next((c for c in all_classes if slot.name in c.slots), None)
+        if slot_class is None: continue
+        column_rows.append(map_multivalued_slot(slot, slot_class, all_column_rows))
+    return all_column_rows + column_rows
+
+
+def map_enums(all_enums: List[EnumDefinition], all_table_rows: List[dict], all_column_rows: List[dict], output_dir: str) -> List[dict]:
+    data_tables = []
+    updated_table_rows = all_table_rows.copy()
+    updated_column_rows = all_column_rows.copy()
+    for enum in all_enums:
+        # Map enum to Table table, with a Permissible Value column and IRI/meaning column
+        updated_table_rows.append(table_row(enum.name, enum.description, output_dir))
+
+        # Use the value as the primary key so it can serve as a foreign key
+        updated_column_rows.append(column_row(ENUM_PRIMARY_KEY, enum.name, "Permissible Value", ENUM_PRIMARY_KEY_DATATYPE, PRIMARY_KEY_STRUCTURE, is_required=True))
+        updated_column_rows.append(column_row("meaning", enum.name, "CURIE meaning", ENUM_MEANING_DATATYPE, None, is_required=False))
+
+        # Map enum values to rows in the enum table
+        permissible_values = enum.permissible_values
+        data_tables.append({
+            "table": enum.name,
+            "rows": [ {ENUM_PRIMARY_KEY: v, "meaning": permissible_values[v].meaning} for v in permissible_values ],
+        })
+    return [updated_table_rows, updated_column_rows, data_tables]
 
 
 def map_class_slot(schemaView: SchemaView, slot: SlotDefinition, slot_class: ClassDefinition, all_classes: List[ClassDefinition], all_enums: List[EnumDefinition]) -> Optional[dict]:
@@ -316,9 +310,17 @@ def map_data(yaml_schema_path: str, yaml_data_dir: str):
     raise NotImplementedError("LinkML data mapping not implemented yet")
 
 
-def get_inherited_class_slots(schemaView: SchemaView, linkml_class: ClassDefinition) -> List[SlotDefinition]:
-    """Get only slots of this class that are inherited from some ancestor class, so we can track these separately from the non-inherited slots/attributes"""
-    return [slot for slot in schemaView.class_induced_slots(linkml_class.name) if (slot.name not in linkml_class.slots) and (slot.name not in linkml_class.attributes)]
+def get_all_class_slots(schemaView: SchemaView, linkml_class: ClassDefinition) -> List[SlotDefinition]:
+    """Get all slots of a class, including inherited slots, sorted with inherited slots first"""
+    sorted_slots = []
+    slots = schemaView.class_induced_slots(linkml_class.name)
+    for slot in slots:
+        if is_slot_inherited(linkml_class, slot):
+            sorted_slots.append(slot)
+    for slot in slots:
+        if not is_slot_inherited(linkml_class, slot):
+            sorted_slots.append(slot)
+    return sorted_slots
 
 
 # Copied from https://github.com/linkml/linkml/blob/c933c7c0c82e3eaa48d815f9cae033360626438e/linkml/generators/typescriptgen.py#L140
@@ -334,6 +336,9 @@ def get_identifier_or_key_slot(sv: SchemaView, cn: ClassDefinitionName) -> Optio
                 return s
         return None
 
+
+def is_slot_inherited(linkml_class: ClassDefinition, slot: SlotDefinition) -> bool:
+    return (slot.name not in linkml_class.slots) and (slot.name not in linkml_class.attributes)
 
 def is_enum_table(table_name, enum_primary_key, column_dicts):
     return any(c for c in column_dicts if c["table"] == table_name and c["column"] == enum_primary_key)
