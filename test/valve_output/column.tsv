@@ -16,7 +16,7 @@ NamedThing	id		text	primary
 NamedThing	name	empty	text		
 NamedThing	description	empty	text		
 NamedThing	image	empty	text		
-Person	id		string	primary	
+Person	id		text	primary	
 Person	name	empty	string		
 Person	description	empty	string		
 Person	image	empty	string		
@@ -25,8 +25,8 @@ Person	birth_date	empty	text
 Person	age_in_years	empty	person_age_in_years		
 Person	gender	empty	GenderType		
 Person	current_address	empty	text	from(Address.id)	The address at which a person currently lives
-HasAliases	id		text	primary	generated column
-Organization	id		string	primary	
+HasAliases	id		string	primary	generated column
+Organization	id		text	primary	
 Organization	name	empty	string		
 Organization	description	empty	string		
 Organization	image	empty	string		
@@ -35,44 +35,44 @@ Organization	founding_date	empty	text
 Organization	founding_location	empty	string	from(Place.id)	
 Place	id		text	primary	
 Place	name	empty	text		
-Address	id		text	primary	generated column
+Address	id		string	primary	generated column
 Address	street	empty	text		
 Address	city	empty	text		
 Address	postal_code	empty	string		
-Event	id		text	primary	generated column
+Event	id		string	primary	generated column
 Event	started_at_time	empty	date		
 Event	ended_at_time	empty	date		
 Event	duration	empty	float		
 Event	is_current	empty	boolean		
-Concept	id		string	primary	
+Concept	id		text	primary	
 Concept	name	empty	string		
 Concept	description	empty	string		
 Concept	image	empty	string		
-DiagnosisConcept	id		string	primary	
+DiagnosisConcept	id		text	primary	
 DiagnosisConcept	name	empty	string		
 DiagnosisConcept	description	empty	string		
 DiagnosisConcept	image	empty	string		
-ProcedureConcept	id		string	primary	
+ProcedureConcept	id		text	primary	
 ProcedureConcept	name	empty	string		
 ProcedureConcept	description	empty	string		
 ProcedureConcept	image	empty	string		
-Relationship	id		text	primary	generated column
+Relationship	id		string	primary	generated column
 Relationship	started_at_time	empty	date		
 Relationship	ended_at_time	empty	date		
 Relationship	related_to	empty	text		
 Relationship	type	empty	text		
-FamilialRelationship	id		text	primary	generated column
+FamilialRelationship	id		string	primary	generated column
 FamilialRelationship	started_at_time	empty	date		
 FamilialRelationship	ended_at_time	empty	date		
 FamilialRelationship	related_to		string	from(Person.id)	
 FamilialRelationship	type		FamilialRelationshipType		
-EmploymentEvent	id		text	primary	generated column
+EmploymentEvent	id		string	primary	generated column
 EmploymentEvent	started_at_time	empty	date		
 EmploymentEvent	ended_at_time	empty	date		
 EmploymentEvent	duration	empty	float		
 EmploymentEvent	is_current	empty	boolean		
 EmploymentEvent	employed_at	empty	string	from(Organization.id)	
-MedicalEvent	id		text	primary	generated column
+MedicalEvent	id		string	primary	generated column
 MedicalEvent	started_at_time	empty	date		
 MedicalEvent	ended_at_time	empty	date		
 MedicalEvent	duration	empty	float		
@@ -80,11 +80,11 @@ MedicalEvent	is_current	empty	boolean
 MedicalEvent	in_location	empty	string	from(Place.id)	
 MedicalEvent	diagnosis	empty	string	from(DiagnosisConcept.id)	
 MedicalEvent	procedure	empty	string	from(ProcedureConcept.id)	
-WithLocation	id		text	primary	generated column
+WithLocation	id		string	primary	generated column
 WithLocation	in_location	empty	string	from(Place.id)	
-Container	id		text	primary	generated column
-EmploymentEvent	person	empty	string	from(Person.id)	generated column from multivalued slot Person.has_employment_history
-MedicalEvent	person	empty	string	from(Person.id)	generated column from multivalued slot Person.has_medical_history
-FamilialRelationship	person	empty	string	from(Person.id)	generated column from multivalued slot Person.has_familial_relationships
-Person	container	empty	text	from(Container.id)	generated column from multivalued slot Container.persons
-Organization	container	empty	text	from(Container.id)	generated column from multivalued slot Container.organizations
+Container	id		string	primary	generated column
+EmploymentEvent	person	empty	text	from(Person.id)	generated column from multivalued slot Person.has_employment_history
+MedicalEvent	person	empty	text	from(Person.id)	generated column from multivalued slot Person.has_medical_history
+FamilialRelationship	person	empty	text	from(Person.id)	generated column from multivalued slot Person.has_familial_relationships
+Person	container	empty	string	from(Container.id)	generated column from multivalued slot Container.persons
+Organization	container	empty	string	from(Container.id)	generated column from multivalued slot Container.organizations

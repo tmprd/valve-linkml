@@ -89,9 +89,7 @@ def linkml2valve(yaml_schema_path: str, output_dir: str, data_dir: str = None, g
         map_data(yaml_schema_path, data_dir)
 
 
-
-def class2table_row(class_name: str, class_description: str, table_dir: str):
-    # A class is a Table row
+def table_row(class_name: str, class_description: str, table_dir: str):
     return {
         "table": class_name,
         "path": f'{table_dir}/{class_name}.tsv',
@@ -99,62 +97,17 @@ def class2table_row(class_name: str, class_description: str, table_dir: str):
         "type": None,
     }
 
-def slot2column_row(slot_name: str,
-                slot_class_name: str, 
-                slot_description: str, 
-                slot_range_name: str, 
-                slot_range_identifier_name: str,
-                slot_range_identifer_type: str,
-                slot_usage_datatype: str,
-                is_slot_range_a_class: bool, 
-                is_primary_key: bool,
-                is_required: bool):
-    # A slot/attribute is a Column row
+def column_row(column_name: str, table_name: str, description: str, datatype: str, structure: str, is_required: bool):
     return {
-        "table": slot_class_name,
-        "column": slot_name,
+        "table": table_name,
+        "column": column_name,
         "nulltype": 'empty' if not is_required else None,
-        "datatype": slot2column_datatype(slot_usage_datatype, slot_range_name, is_slot_range_a_class, slot_range_identifer_type),
-        "structure": slot2column_structure(slot_range_name, slot_range_identifier_name, is_slot_range_a_class, is_primary_key),
-        "description": slot_description,
+        "datatype": datatype,
+        "structure": structure,
+        "description": description,
     }
 
-def slot2column_datatype(slot_usage_datatype: str, slot_range_name: str, is_slot_range_a_class: bool, slot_range_identifier_type: str):
-    # These map to a Column's "datatype":
-        # - a slot's class-specific, slot_usage datatype
-        # - a primitive type if the range is not a class
-        # - a slot's range class's primary key if the range is a class
-        # - the default datatype
-    if slot_usage_datatype is not None:
-        return slot_usage_datatype
-    elif slot_range_name is not None:
-        if not is_slot_range_a_class:
-            # Range is not a class, e.g. a default/scalar type, so map to its name
-            return slot_range_name
-        elif slot_range_identifier_type is not None:
-            # Range is a class AND has an identifier, so map to the datatype of the class's identifier (primary key)
-            return slot_range_identifier_type
-        else:
-            # Range is a class but doesn't have an identifier, so map to the default datatype
-            return SCHEMA_DEFAULT_RANGE
-    else:
-        return SCHEMA_DEFAULT_RANGE
-
-
-def slot2column_structure(slot_range_name: str, slot_range_identifier_name: str, is_slot_range_a_class: bool, is_primary_key: bool):
-    # These map to a Column's "structure":
-        # - 'primary' if the slot is an identifier or key
-        # - a 'from()' foreign key constraint if the slot has a range that's a class AND that class has an identifier/primary key
-    if is_primary_key:
-        return 'primary'
-    elif is_slot_range_a_class and (slot_range_name is not None) and (slot_range_identifier_name is not None):
-        # from() represents a foreign key constraint. The foreign key table is the class, the foreign key column is the identifier for that class.
-        # TODO: if the range class doesn't have an identifier, we'll need to create one and also generate identifier values for its data
-        return f'from({slot_range_name}.{slot_range_identifier_name})'
-    else:
-        return None
-
-def slot2datatype_row(slot_name: str, slot_description, slot_pattern: str, slot_enum_values: List[str] = None):
+def datatype_row(slot_name: str, slot_description, slot_pattern: str, slot_enum_values: List[str] = None):
     # TODO Map slot minimum_value & maximum_value to ...?
     return {
         "datatype": slot_name,
@@ -170,19 +123,6 @@ def slot2datatype_row(slot_name: str, slot_description, slot_pattern: str, slot_
         "HTML type": None, # TODO
     }
 
-def slot_usage2datatype_row(slot_usage: SlotDefinition, slot_class: ClassDefinition, all_classes: List[ClassDefinition], all_enums: List[EnumDefinition], datatype_dicts: List[dict]):
-    # A class-specific slot_usage maps to a Datatype row only if its range is not a class or enum
-    slot_usage_class = next((c for c in all_classes if c.name == slot_usage.range), None)
-    slot_usage_enum = next((e for e in all_enums if e.name == slot_usage.range), None)
-    if slot_usage_class is not None or slot_usage_enum is not None:
-        # TODO get datatype of identifier of range class of slot usage
-        # slot_usage_datatype = ...
-        return None
-    else:
-        # Create a new Datatype for this slot usage. Then set that as the "datatype" in the Column table.
-        slot_usage_datatype = f"{slot_class.name.lower()}_{slot_usage.name}"
-        return slot2datatype_row(slot_usage_datatype, None, slot_usage.pattern, None)
-
 def map_schema(yaml_schema_path: str, output_dir: str) -> dict[str, dict[str, str]]:
     # Data tables go in a subdirectory of the schema directory by default
     data_table_dir = os.path.join(output_dir, "data")
@@ -194,131 +134,148 @@ def map_schema(yaml_schema_path: str, output_dir: str) -> dict[str, dict[str, st
     all_enums = linkml_schema.all_enums().values()
     all_types = linkml_schema.all_types().values()
     SCHEMA_DEFAULT_RANGE = linkml_schema.schema.default_range
-
+    print("SCHEMA_DEFAULT_RANGE", SCHEMA_DEFAULT_RANGE)
+    
     class_count = len(all_classes)
     slot_count = len(all_slots)
     enum_count = len(all_enums)
     LOGGER.debug(f"{class_count} classes, {slot_count} slots, {enum_count} enums parsed from '{yaml_schema_path}'")
     validate_schema(all_classes, all_slots, all_enums)
 
-    table_dicts = []
-    column_dicts = []
-    datatype_dicts = []
+    table_rows: list[dict] = []
+    all_column_rows: list[dict] = []
+    datatype_rows: list[dict] = []
 
-    # Map all types to Datatype table
+    # Map all types to Datatype table rows
     for type in all_types:
-        datatype_dicts.append(slot2datatype_row(type.name, None, None, None))
+        datatype_rows.append(datatype_row(type.name, None, None, None))
     
-    # Map classes to Table table
+    # Map classes to Table table rows
     for linkml_class in all_classes:
-        table_dicts.append(class2table_row(linkml_class.name, linkml_class.description, data_table_dir))
+        table_rows.append(table_row(linkml_class.name, linkml_class.description, data_table_dir))
 
-        # Map slots of (transitively) inherited classes to additional columns for this class in the Column table. (Note: these include slots/attributes inherited from "mixins".)
+        class_has_primary_key = False
+        
+        # Map slots of (transitively) inherited classes to additional rows for this class in the Column table. (Note: these include slots/attributes inherited from "mixins".)
         inherited_slots = get_inherited_class_slots(linkml_schema, linkml_class)
         for inherited_slot in inherited_slots:
-            map_class_slot(linkml_schema, inherited_slot, linkml_class, column_dicts, datatype_dicts, all_classes, all_enums)
+            new_column_row = map_class_slot(linkml_schema, inherited_slot, linkml_class, all_classes)
+            print("new inherited column_row for class", linkml_class.name, new_column_row)
+            class_has_primary_key = class_has_primary_key or (new_column_row["structure"] == "primary") if new_column_row else class_has_primary_key
+            # Add new column row
+            all_column_rows = (all_column_rows + [new_column_row]) if new_column_row else all_column_rows
 
-        # Map class slots to Column table
-        for slot_name in linkml_class.slots:
+        # # Map class slots and attributes to Column table rows
+        slot_names = list(linkml_class.slots) + list(linkml_class.attributes)
+        print("class slot_names", slot_names)
+        for slot_name in slot_names:
+            # Map slot to Column table row
             slot = next((s for s in all_slots if s.name == slot_name), None) # TODO check if specified class slot isn't in the list of all slots ...
-            map_class_slot(linkml_schema, slot, linkml_class, column_dicts, datatype_dicts, all_classes, all_enums)
-            
-        # Map attributes to the Column table
-        for attribute in linkml_class.attributes:
-            attribute_slot = next((s for s in all_slots if s.name == attribute), None)
-            map_class_slot(linkml_schema, attribute_slot, linkml_class, column_dicts, datatype_dicts, all_classes, all_enums)
+            new_column_row = map_class_slot(linkml_schema, slot, linkml_class, all_classes)
+            print("new_column_row for class", linkml_class.name, new_column_row)
+            class_has_primary_key = class_has_primary_key or (new_column_row["structure"] == "primary") if new_column_row else class_has_primary_key
+            # Map slot usage to Datatype table row if its range isn't a class or enum. This should be the dataype of the Column row.
+            slot_usage = linkml_class.slot_usage.get(slot_name)
+            if slot_usage:
+                new_datatype_row = slot_usage2datatype_row(slot_usage, linkml_class, all_classes, all_enums)
+                # Update datatype of new column row
+                new_column_row["datatype"] = new_datatype_row["datatype"]
+                # Add new datatype row
+                datatype_rows = (datatype_rows + [new_datatype_row]) if new_datatype_row else datatype_rows
+
+            # Add new column row
+            all_column_rows = (all_column_rows + [new_column_row]) if new_column_row else all_column_rows
+            print()
+
 
         # If no identifier slot was found and used as a primary key, we need to make one for this class and add it to the Column table
-        mapped_table_column_dicts = [c for c in column_dicts if c["table"] == linkml_class.name]
-        class_primary_key = next((c for c in mapped_table_column_dicts if c["structure"] == "primary"), None)
-        if class_primary_key is None:
+        if not class_has_primary_key:
             LOGGER.info(f"Class '{linkml_class.name}' has no identifier slot. Creating primary key '{DEFAULT_PRIMARY_KEY}' and adding it to the Column table.")
             # Add new primary key as the first column
-            new_primary_key_column = slot2column_row(DEFAULT_PRIMARY_KEY, linkml_class.name, "generated column", None, None, None, None, is_slot_range_a_class=False, is_primary_key=True, is_required=True)
-            table_columns_index = len(column_dicts)
-            if len(mapped_table_column_dicts) > 0:
-                table_columns_index = column_dicts.index(mapped_table_column_dicts[0])
-            column_dicts.insert(table_columns_index, new_primary_key_column)
+            mapped_table_column_rows = [c for c in all_column_rows if c["table"] == linkml_class.name]
+            new_primary_key_column = column_row(DEFAULT_PRIMARY_KEY, linkml_class.name, "generated column", 
+                                                SCHEMA_DEFAULT_RANGE, "primary", is_required=True)
+            table_columns_index = all_column_rows.index(mapped_table_column_rows[0]) if len(mapped_table_column_rows) > 0 else len(all_column_rows)
+            all_column_rows.insert(table_columns_index, new_primary_key_column)
             
     # Map multivalued slots to new columns in the class table of the multivalued slot's range. This has to be done after adding primary keys for missing class identifiers.
     for slot in all_slots:
         if not slot.multivalued: continue
         slot_class = next((c for c in all_classes if slot.name in c.slots), None)
         if slot_class is None: continue
-        map_multivalued_slot(slot, slot_class, column_dicts)
+        map_multivalued_slot(slot, slot_class, all_column_rows)
 
     # Map enums
     for enum in all_enums:
-        map_enum(enum, column_dicts, datatype_dicts, table_dicts, output_dir)
+        map_enum(enum, all_column_rows, datatype_rows, table_rows, output_dir)
 
     # Check invariants
-    assert len(table_dicts) >= class_count, f"{class_count} classes mapped to {len(table_dicts)} tables. Expected at least as many tables as classes."
-    assert len(column_dicts) >= slot_count, f"{slot_count} slots mapped to {len(column_dicts)} columns. Expected at least as many columns as slots."
+    assert len(table_rows) >= class_count, f"{class_count} classes mapped to {len(table_rows)} tables. Expected at least as many tables as classes."
+    assert len(all_column_rows) >= slot_count, f"{slot_count} slots mapped to {len(all_column_rows)} columns. Expected at least as many columns as slots."
 
     return {
-        "table": {"rows":table_dicts, "path": output_dir + '/table.tsv'},
-        "column": {"rows": column_dicts, "path": output_dir + '/column.tsv'}, 
-        "datatype": {"rows": datatype_dicts, "path": output_dir + '/datatype.tsv'}
+        "table": {"rows":table_rows, "path": output_dir + '/table.tsv'},
+        "column": {"rows": all_column_rows, "path": output_dir + '/column.tsv'}, 
+        "datatype": {"rows": datatype_rows, "path": output_dir + '/datatype.tsv'}
     }
 
-def map_class_slot(schemaView: SchemaView, slot: SlotDefinition, slot_class: ClassDefinition, 
-                   column_dicts: List[dict], datatype_dicts: List[dict],
-                   all_classes: List[ClassDefinition], all_enums: List[EnumDefinition]):
-    
-    # Slot properties that are relevant to its corresponding Column table mapping
-    is_slot_required = slot.required
-    is_slot_range_a_class = False
-    is_slot_primary_key = slot.identifier or slot.key
+# Map the range of a class-specific slot_usage to a new Datatype row. Example: "primary_email" in Person uses a "person_primary_email" datatype.
+# If slot_usage has a class as its range, then map that to a from() foreign key "structure" in the Column table.
+# TODO: If slot_usage has an enum as its range, then map that to a from() foreign key "structure" in the Column table.
+def slot_usage2datatype_row(slot_usage: SlotDefinition, slot_class: ClassDefinition, all_classes: List[ClassDefinition], all_enums: List[EnumDefinition]):
+    # A class-specific slot_usage maps to a Datatype row only if its range is not a class or enum
+    slot_usage_class = next((c for c in all_classes if c.name == slot_usage.range), None)
+    slot_usage_enum = next((e for e in all_enums if e.name == slot_usage.range), None)
+    if slot_usage_class is not None or slot_usage_enum is not None:
+        # TODO get datatype of identifier of range class of slot usage
+        # slot_usage_datatype = ...
+        return None
+    else:
+        # Create a new Datatype for this slot usage. Then set that as the "datatype" in the Column table.
+        slot_usage_datatype = f"{slot_class.name.lower()}_{slot_usage.name}"
+        return datatype_row(slot_usage_datatype, None, slot_usage.pattern, None)
 
-    slot_usage_datatype = None
-    range_class_identifier_name = None
-    range_class_identifier_datatype = None
 
-    # If the slot is multivalued, don't add it as a column for this table. Instead, this will be mapped to another table after all class slots have been mapped and primary keys are generated.
+def map_class_slot(schemaView: SchemaView, slot: SlotDefinition, slot_class: ClassDefinition, all_classes: List[ClassDefinition]):
+    # If the slot is multivalued, don't add it as a column for this table.
+    # Instead, this will be mapped to another table after all class slots have been mapped and primary keys are generated.
     if slot.multivalued:
         LOGGER.info(f"Skipping multivalued slot '{slot.name}' in class '{slot_class.name}' for now.")
-        return
+        return None
+    
+    column_datatype = DEFAULT_DATATYPE
+    column_structure = None
 
-    # If this slot's range is a class, then map that to a from() foreign key "structure" in the Column table, which references that class's identifier and datatype of that identifier
-    range_class = next((c for c in all_classes if c.name == slot.range), None)
-    if range_class is not None:
-        is_slot_range_a_class = True
-        range_class_identifier = get_identifier_or_key_slot(schemaView, range_class.name)
-        if range_class_identifier is not None:
-            range_class_identifier_name = range_class_identifier.name
-            # TODO: Does this identifier have a slot_usage?
-            slot_range_class_identifier_usage_datatype = None
-            # Finally get the datatype. Note: the range of the class identifier will be the "default_range" in the schema if not specified otherwise
-            range_class_identifier_datatype = slot2column_datatype(slot_range_class_identifier_usage_datatype, range_class_identifier.range, False, None)
+    # Map identifier slot to "primary" structure of the Column
+    if slot.identifier or slot.key:
+        column_datatype = DEFAULT_PRIMARY_KEY_DATATYPE
+        column_structure = "primary"
+    
+    # Map slot range to the Column's datatype and structure
+    elif slot.range is not None:
+        range_class = next((c for c in all_classes if c.name == slot.range), None)
+        if range_class is None:
+            # Map range type value to the datatype of the Column
+            column_datatype =  slot.range
         else:
-            LOGGER.info(f"Slot '{slot.name}' has range '{range_class.name}', but '{range_class.name}' has no identifier. Using {range_class.name}.{DEFAULT_PRIMARY_KEY} as the foreign key.")
-            range_class_identifier_name = DEFAULT_PRIMARY_KEY
-            range_class_identifier_datatype = DEFAULT_PRIMARY_KEY_DATATYPE
+            # Map range class value to the structure of the Column => from(<range_class>.<range_class_identifier>)
+            range_class_identifier = get_identifier_or_key_slot(schemaView, range_class.name)
+            if range_class_identifier is not None:
+                # Map range class identifier type to the datatype of the Column
+                column_datatype = range_class_identifier.range or SCHEMA_DEFAULT_RANGE
+                column_structure = from_structure(range_class.name, range_class_identifier.name)
+                # TODO: Can identifier slots have slot_usages?
+            else:
+                LOGGER.info(f"Slot '{slot.name}' has range '{range_class.name}', but '{range_class.name}' has no identifier. Using {range_class.name}.{DEFAULT_PRIMARY_KEY} as the foreign key.")
+                column_datatype = DEFAULT_PRIMARY_KEY_DATATYPE
+                column_structure = from_structure(range_class.name, DEFAULT_PRIMARY_KEY)
 
-    # Map the range of a class-specific slot_usage to a new Datatype row. Example: "primary_email" in Person uses a "person_primary_email" datatype.
-    # If slot_usage has a class as its range, then map that to a from() foreign key "structure" in the Column table.
-    # TODO: If slot_usage has an enum as its range, then map that to a from() foreign key "structure" in the Column table.
-    slot_usage = slot_class.slot_usage.get(slot.name)
-    if slot_usage is not None:
-        new_datatype_row = slot_usage2datatype_row(slot_usage, slot_class, all_classes, all_enums, datatype_dicts)
-        if new_datatype_row is not None:
-            datatype_dicts.append(new_datatype_row)
-            slot_usage_datatype = new_datatype_row["datatype"]
+    # Map slot to Column
+    return column_row(slot.name, slot_class.name, slot.description, column_datatype, column_structure, slot.required)
 
-        
-    # Finally map slot to column
-    column_dicts.append(slot2column_row(slot.name, 
-                                        slot_class.name, 
-                                        slot.description, 
-                                        slot.range, 
-                                        range_class_identifier_name,
-                                        range_class_identifier_datatype,
-                                        slot_usage_datatype, 
-                                        is_slot_range_a_class,
-                                        is_slot_primary_key,
-                                        is_slot_required))
 
-def map_multivalued_slot(slot: SlotDefinition, slot_class: ClassDefinition, column_dicts: List[dict]):
+
+def map_multivalued_slot(slot: SlotDefinition, slot_class: ClassDefinition, column_rows: List[dict]):
     """Add a new column to the range class of this slot, where the "structure" is from(<range_class>.<identifier>)"""
     # Ex. Person
     #       - has_medical_history:
@@ -330,38 +287,35 @@ def map_multivalued_slot(slot: SlotDefinition, slot_class: ClassDefinition, colu
 
     new_column_table_name = slot.range # ex. MedicalEvent
     new_column_name = slot_class.name.lower() # ex. person   
-    new_column_fk_table = slot_class.name # ex. Person
 
     # Get the primary key of the table that serves as the range of this slot
-    slot_class_table_dicts = [c for c in column_dicts if c["table"] == slot_class.name]
-    slot_range_class_primary_key_column = next((c for c in slot_class_table_dicts if c["structure"] == "primary"), None)
+    slot_class_table_rows = [c for c in column_rows if c["table"] == slot_class.name]
+    slot_range_class_primary_key_column = next((c for c in slot_class_table_rows if c["structure"] == "primary"), None)
     if slot_range_class_primary_key_column is None:
         raise Exception(f"Cannot map multivalued slot '{slot.name}' with range '{slot.range}' in class '{slot_class.name}'. No primary key found for range class '{slot.range}' but every class table should have a primary key.")
 
-    new_column_fk_column = slot_range_class_primary_key_column["column"] # ex. Person.id
     new_column_datatype = slot_range_class_primary_key_column["datatype"] # ex. string
-
+    new_column_structure = from_structure(slot_class.name, slot_range_class_primary_key_column["column"]) # ex. from(Person.id)
+    
     LOGGER.info(f"Mapping multivalued slot '{slot.name}' with range '{slot.range}' in class '{slot_class.name}' => to new column '{new_column_name}' in '{new_column_table_name}'")
-
-    column_dicts.append(slot2column_row(new_column_name, new_column_table_name, f"generated column from multivalued slot {slot_class.name}.{slot.name}", 
-                                        new_column_fk_table, new_column_fk_column, new_column_datatype,
-                                        slot_usage_datatype=None, 
-                                        is_slot_range_a_class=True, is_primary_key=False, is_required=slot.required))
+    
+    column_rows.append(column_row(new_column_name, new_column_table_name, f"generated column from multivalued slot {slot_class.name}.{slot.name}", 
+                                        new_column_datatype, new_column_structure, slot.required))
 
 
-def map_enum(enum: EnumDefinition, column_dicts: List[dict], datatype_dicts: List[dict], table_dicts: List[dict], valve_dir: str):
+def map_enum(enum: EnumDefinition, column_rows: List[dict], datatype_rows: List[dict], table_rows: List[dict], valve_dir: str):
     # Map permissible enum values to "condition" in Datatype table
-    datatype_dicts.append(slot2datatype_row(enum.name, enum.description, None, enum.permissible_values))
+    datatype_rows.append(datatype_row(enum.name, enum.description, None, enum.permissible_values))
 
     # Map enum to Table table, with a Permissible Value column and IRI/meaning column
-    # table_dicts.append(class2table_row(enum.name, enum.description, valve_dir))
+    # table_rows.append(table_row(enum.name, enum.description, valve_dir))
 
     # TODO: designate enum table "type" as "enum table" ?
-    # column_dicts.append(slot2column_row("permissible_value", enum.name, "Permissible Value", None, None, None, None, False, False, is_required=True))
-    # column_dicts.append(slot2column_row("meaning", enum.name, "IRI Meaning", None, None, None, None, False, False, is_required=True))
+    # column_rows.append(column_row("permissible_value", enum.name, "Permissible Value", None, None, None, None, False, False, is_required=True))
+    # column_rows.append(column_row("meaning", enum.name, "IRI Meaning", None, None, None, None, False, False, is_required=True))
 
     # Need to create a primary key so these permissible values can serve as foreign
-    # column_dicts.append(slot2column_row(DEFAULT_PRIMARY_KEY, enum.name, None, None, None, None, None, None, is_primary_key=True, is_required=True))
+    # column_rows.append(column_row(DEFAULT_PRIMARY_KEY, enum.name, None, None, None, None, None, None, is_primary_key=True, is_required=True))
 
     # TODO: actually create the enum table with permissible values + IRIs as rows
 
@@ -386,6 +340,9 @@ def get_identifier_or_key_slot(sv: SchemaView, cn: ClassDefinitionName) -> Optio
             if s.key:
                 return s
         return None
+
+def from_structure(table_name: str, column_name: str):
+    return f'from({table_name}.{column_name})'
 
 def format_enum_str(enum_values: List[str]):
     return ','.join([f"'{v}'" for v in enum_values])
