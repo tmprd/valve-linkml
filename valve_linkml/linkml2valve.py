@@ -113,7 +113,7 @@ def map_schema(yaml_schema_path: str, output_dir: str) -> dict[str, dict[str, st
         all_table_rows.append(table_row(linkml_class.name, linkml_class.description, data_table_dir))
 
         # Map slots to Column table rows and slot usages to Datatype table rows
-        all_column_rows, all_datatype_rows = map_class_slots(linkml_schema, linkml_class, all_column_rows, all_datatype_rows, all_classes, all_slots, all_enums)
+        all_column_rows, all_datatype_rows = map_class_slots(linkml_schema, linkml_class, all_column_rows, all_datatype_rows, all_classes, all_enums)
 
     # Map multivalued slots to new columns in the class table of the multivalued slot's range. This has to be done after adding primary keys for missing class identifiers.
     all_column_rows = map_multivalued_slots(all_slots, all_classes, all_column_rows)
@@ -138,7 +138,7 @@ def map_schema(yaml_schema_path: str, output_dir: str) -> dict[str, dict[str, st
 
 def map_class_slots(linkml_schema: SchemaView, linkml_class: ClassDefinition, 
                     all_column_rows: List[dict], all_datatype_rows: List[dict],
-                    all_classes: List[dict], all_slots: List[dict], all_enums: List[dict]) -> List[dict]:
+                    all_classes: List[dict], all_enums: List[dict]) -> List[dict]:
     
     new_column_rows = []
     new_datatype_rows = []
@@ -156,13 +156,12 @@ def map_class_slots(linkml_schema: SchemaView, linkml_class: ClassDefinition,
 
         # Map slot usage to Datatype table row if its range isn't a class or enum. This should be the dataype of the Column row.
         slot_usage = linkml_class.slot_usage.get(slot.name)
-        if slot_usage:
-            new_datatype_row = slot_usage2datatype_row(slot_usage, linkml_class, all_classes, all_enums)
-            if new_datatype_row:
-                # Update datatype of new column row
-                new_column_row["datatype"] = new_datatype_row["datatype"]
-                # Add new datatype row
-                new_datatype_rows.append(new_datatype_row)
+        new_datatype_row = slot_usage2datatype_row(slot_usage, linkml_class, all_classes, all_enums) if slot_usage else None
+        if new_datatype_row is not None:
+            # Update datatype of new column row
+            new_column_row["datatype"] = new_datatype_row["datatype"]
+            # Add new datatype row
+            new_datatype_rows.append(new_datatype_row)
 
         # Add new column row
         new_column_rows.append(new_column_row)
@@ -175,10 +174,11 @@ def map_class_slots(linkml_schema: SchemaView, linkml_class: ClassDefinition,
             all_datatype_rows + new_datatype_rows]
 
 
-def slot_usage2datatype_row(slot_usage: SlotDefinition, slot_class: ClassDefinition, all_classes: List[ClassDefinition], all_enums: List[EnumDefinition]) -> Optional[dict]:
+def slot_usage2datatype_row(slot_usage: SlotDefinition, slot_class: ClassDefinition,
+                            all_classes: List[ClassDefinition], all_enums: List[EnumDefinition]) -> Optional[dict]:
     """Map the range of a class-specific slot_usage to a new Datatype row if the range is not a class or enum. \n
     Example: "primary_email" in Person uses a "person_primary_email" datatype."""
-    if is_range_enum(slot_usage.range) or is_range_class(slot_usage.range):
+    if is_range_enum(slot_usage.range, all_enums) or is_range_class(slot_usage.range, all_classes):
         return None
     # Create a new Datatype for this slot usage. Then set that as the "datatype" in the Column table.
     slot_usage_datatype = f"{slot_class.name.lower()}_{slot_usage.name}"
@@ -195,7 +195,9 @@ def generate_table_primary_key(linkml_class: ClassDefinition, column_rows: List[
     return column_rows[:table_index] + [new_primary_key_column] + column_rows[table_index:]
     
 
-def map_multivalued_slots(all_slots: List[SlotDefinition], all_classes: List[ClassDefinition], all_column_rows: List[dict]) -> List[dict]:
+def map_multivalued_slots(all_slots: List[SlotDefinition], 
+                          all_classes: List[ClassDefinition], 
+                          all_column_rows: List[dict]) -> List[dict]:
     column_rows = []
     for slot in all_slots:
         if not slot.multivalued: continue
@@ -205,7 +207,8 @@ def map_multivalued_slots(all_slots: List[SlotDefinition], all_classes: List[Cla
     return all_column_rows + column_rows
 
 
-def map_enums(all_enums: List[EnumDefinition], all_table_rows: List[dict], all_column_rows: List[dict], output_dir: str) -> List[dict]:
+def map_enums(all_enums: List[EnumDefinition], all_table_rows: List[dict], all_column_rows: List[dict], 
+              output_dir: str) -> List[dict]:
     data_tables = []
     updated_table_rows = all_table_rows.copy()
     updated_column_rows = all_column_rows.copy()
@@ -226,7 +229,8 @@ def map_enums(all_enums: List[EnumDefinition], all_table_rows: List[dict], all_c
     return [updated_table_rows, updated_column_rows, data_tables]
 
 
-def map_class_slot(schemaView: SchemaView, slot: SlotDefinition, slot_class: ClassDefinition, all_classes: List[ClassDefinition], all_enums: List[EnumDefinition]) -> Optional[dict]:
+def map_class_slot(schemaView: SchemaView, slot: SlotDefinition, slot_class: ClassDefinition, 
+                   all_classes: List[ClassDefinition], all_enums: List[EnumDefinition]) -> Optional[dict]:
     # If the slot is multivalued, don't add it as a column for this table.
     # Instead, this will be mapped to another table after all class slots have been mapped and primary keys are generated.
     if slot.multivalued:
