@@ -46,6 +46,9 @@ def generate_schema_data(data_table_dicts: List[dict], data_column_dicts: List[d
                 if matching_generated_data is not None:
                     # Write generated data to the table
                     writer.writerows(matching_generated_data)
+
+            
+                    
                 
             logger.info(f"Wrote data to '{table_path}'")
 
