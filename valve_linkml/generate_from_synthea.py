@@ -73,7 +73,8 @@ def map_fhir_patient2person(fhir_patient: dict, index: str, person_address: dict
         "age_in_years": calculate_age(datetime.strptime(fhir_patient["BIRTHDATE"], "%Y-%m-%d")),
         "name": f'{fhir_patient["FIRST"]} {fhir_patient["LAST"]}',
         "primary_email": f'{fhir_patient["FIRST"][0]}.{fhir_patient["LAST"]}@example.com',
-        "gender": random.choice(['cisgender woman', 'nonbinary woman', 'transgender woman']) if (fhir_patient["GENDER"] == "F") else random.choice(['cisgender man', 'nonbinary man', 'transgender man']),
+        # TODO update using fk
+        # "gender": random.choice(['cisgender woman', 'nonbinary woman', 'transgender woman']) if (fhir_patient["GENDER"] == "F") else random.choice(['cisgender man', 'nonbinary man', 'transgender man']),
         "current_address": person_address["id"] # foreign key
     }
 

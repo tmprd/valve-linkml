@@ -23,7 +23,7 @@ Person	image	empty	string
 Person	primary_email	empty	person_primary_email		
 Person	birth_date	empty	text		
 Person	age_in_years	empty	person_age_in_years		
-Person	gender	empty	GenderType		
+Person	gender	empty	text	from(GenderType.permissible_value)	
 Person	current_address	empty	text	from(Address.id)	The address at which a person currently lives
 HasAliases	id		string	primary	generated column
 Organization	id		text	primary	
@@ -65,7 +65,7 @@ FamilialRelationship	id		string	primary	generated column
 FamilialRelationship	started_at_time	empty	date		
 FamilialRelationship	ended_at_time	empty	date		
 FamilialRelationship	related_to		string	from(Person.id)	
-FamilialRelationship	type		FamilialRelationshipType		
+FamilialRelationship	type		text	from(FamilialRelationshipType.permissible_value)	
 EmploymentEvent	id		string	primary	generated column
 EmploymentEvent	started_at_time	empty	date		
 EmploymentEvent	ended_at_time	empty	date		
@@ -89,8 +89,8 @@ FamilialRelationship	person	empty	text	from(Person.id)	generated column from mul
 Person	container	empty	string	from(Container.id)	generated column from multivalued slot Container.persons
 Organization	container	empty	string	from(Container.id)	generated column from multivalued slot Container.organizations
 FamilialRelationshipType	permissible_value		text	primary	Permissible Value
-FamilialRelationshipType	meaning		text	primary	CURIE meaning
+FamilialRelationshipType	meaning	empty	CURIE		CURIE meaning
 GenderType	permissible_value		text	primary	Permissible Value
-GenderType	meaning		text	primary	CURIE meaning
+GenderType	meaning	empty	CURIE		CURIE meaning
 DiagnosisType	permissible_value		text	primary	Permissible Value
-DiagnosisType	meaning		text	primary	CURIE meaning
+DiagnosisType	meaning	empty	CURIE		CURIE meaning

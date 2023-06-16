@@ -1,0 +1,4 @@
+permissible_value	meaning
+SIBLING_OF	famrel:01
+PARENT_OF	famrel:02
+CHILD_OF	famrel:03

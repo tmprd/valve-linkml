@@ -36,6 +36,3 @@ objectidentifier	text				a objectidentifier
 nodeidentifier	text				a nodeidentifier				
 person_primary_email	text		match(/^\S+@[\S+\.]+\S+/)		a person_primary_email				
 person_age_in_years	text				a person_age_in_years				
-FamilialRelationshipType	text		in('SIBLING_OF','PARENT_OF','CHILD_OF')		a FamilialRelationshipType				
-GenderType	text		in('nonbinary man','nonbinary woman','transgender woman','transgender man','cisgender man','cisgender woman')		a GenderType				
-DiagnosisType	text				a DiagnosisType				

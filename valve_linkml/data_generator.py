@@ -5,6 +5,11 @@ from typing import List
 
 from .generate_from_synthea import generate_tables_from_fhir_mapping
 
+def is_enum_table(table_name, enum_primary_key, column_dicts):
+    """Determine if a table is an enum table based on its name and column dicts."""
+    # Enum tables have a single column with the same name as the table
+    return any(c for c in column_dicts if c["table"] == table_name and c["column"] == enum_primary_key)
+
 def generate_schema_data(data_table_dicts: List[dict], data_column_dicts: List[dict], logger):
     """Generate data given some data table and column dicts. Exclude Enum tables. Don't use this with VALVE config metadata."""
     logger.info("Generating data tables...")
@@ -16,8 +21,9 @@ def generate_schema_data(data_table_dicts: List[dict], data_column_dicts: List[d
 
     # Create the data tables themselves
     for table_dict in data_table_dicts:
-        table_type = table_dict["type"]
-        if table_type == "enum":
+        # Skip enum tables! Don't overwrite
+        if is_enum_table(table_dict["table"], "permissible_value", data_column_dicts):
+            logger.info(f"Skipping data generation for enum table {table_dict['table']}")
             continue # Skip enums to avoid overwriting the values
 
         table_name = table_dict["table"]
