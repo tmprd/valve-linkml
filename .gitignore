@@ -6,3 +6,4 @@ build
 launch.json
 .DS_Store
 notes/
+*.db

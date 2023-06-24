@@ -3,20 +3,22 @@ import csv
 from typing import List, Callable
 
 VALVE_SCHEMA = {
-    "table": {
-        "headers": ["table", "path", "description", "type"],
+    "tables": {
+        "table": {
+            "headers": ["table", "path", "description", "type"],
+        },
+        "column": {
+            "headers": ["table", "column", "nulltype", "datatype", "structure", "description"],
+        },
+        "datatype": {
+            "headers": ["datatype", "parent", "transform", "condition", "structure", "description", "SQLite type", "PostgreSQL type", "RDF type", "HTML type"],
+        }
     },
-    "column": {
-        "headers": ["table", "column", "nulltype", "datatype", "structure", "description"],
-    },
-    "datatype": {
-        "headers": ["datatype", "parent", "transform", "condition", "structure", "description", "SQLite type", "PostgreSQL type", "RDF type", "HTML type"],
+    "defaults": {
+        "datatype": "text",
+        "primary_key": "id"
     }
 }
-
-DEFAULT_DATATYPE = 'text'
-DEFAULT_PRIMARY_KEY = 'id'
-PRIMARY_KEY_STRUCTURE = "primary"
 
 def table_row(table_name: str, table_description: str, table_dir: str):
     return {
@@ -40,7 +42,7 @@ def datatype_row(datatype_name: str, datatype_description, regex: str):
     # TODO Map slot minimum_value & maximum_value to ...?
     return {
         "datatype": datatype_name,
-        "parent": DEFAULT_DATATYPE,
+        "parent": VALVE_SCHEMA["defaults"]["datatype"],
         "transform": None,
         "condition": (f"match(/{regex}/)" if regex else None),
         "structure": None,
@@ -53,8 +55,8 @@ def datatype_row(datatype_name: str, datatype_description, regex: str):
 
 
 def prepend_valve_tables(schema_tables: dict, output_dir: str, logger):
-    schema_tables["table"]["rows"] = init_valve_table("test/valve_sample_schema/table.tsv", VALVE_SCHEMA, lambda row: map_table_path(row, output_dir)) + schema_tables["table"]["rows"]
-    schema_tables["column"]["rows"] = init_valve_table("test/valve_sample_schema/column.tsv", VALVE_SCHEMA) + schema_tables["column"]["rows"]
+    schema_tables["table"]["rows"] = init_valve_table("test/valve_sample_schema/table.tsv", VALVE_SCHEMA["tables"], lambda row: map_table_path(row, output_dir)) + schema_tables["table"]["rows"]
+    schema_tables["column"]["rows"] = init_valve_table("test/valve_sample_schema/column.tsv", VALVE_SCHEMA["tables"]) + schema_tables["column"]["rows"]
     
     all_datatypes = init_valve_table("test/valve_sample_schema/datatype.tsv", None)
     # Add new mapped datatypes only if there's no duplicately named VALVE datatype. Choose the VALVE datatype over the mapped one.
@@ -77,8 +79,17 @@ def map_table_path(row: dict, output_dir: str):
     return dict(row, path=os.path.join(output_dir, row.get("table") + ".tsv"))
 
 
+def primary_structure():
+    return "primary"
+
+def is_from_structure(structure: str):
+    return structure.startswith("from(")
+
 def from_structure(table_name: str, column_name: str):
     return f'from({table_name}.{column_name})'
+
+def from_structure2table_column(from_structure: str):
+    return from_structure.replace('from(', '').replace(')', '').split('.')
 
 def format_enum_datatype_condition(enum_values: List[str]):
     return f"in({format_enum_str(enum_values)})"
