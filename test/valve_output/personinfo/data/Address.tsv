@@ -53,7 +53,7 @@ id	street	city	postal_code
 52	135 Runolfsdottir Orchard Suite 11	Norton	
 53	546 Kuhlman Mission	Lynn	01940
 54	618 Harber Annex	Southborough	
-invalid-example	341 Langosh Meadow Unit 31	Boston	02122
+55	341 Langosh Meadow Unit 31	Boston	02122
 56	502 Jakubowski Burg	Springfield	
 57	537 Steuber Heights Unit 8	Middleborough	
 58	756 Donnelly Mews	Boston	02122
@@ -160,7 +160,7 @@ invalid-example	341 Langosh Meadow Unit 31	Boston	02122
 159	134 Feest Landing	Marshfield	02050
 160	604 Sipes Divide Unit 0	Boston	02136
 161	954 Marvin Ferry	Marlborough	01752
-162	124 Lowe Heights	Newton	02459
+invalid-example	124 Lowe Heights	Newton	02459
 163	788 Homenick Row Apt 98	Medford	02145
 164	843 Nader Run Apt 38	Brewster	
 165	565 Harris Manor	Boston	02126
@@ -284,7 +284,7 @@ invalid-example	341 Langosh Meadow Unit 31	Boston	02122
 283	967 Rodriguez Parade	Sudbury	
 284	801 Block Lane Apt 35	Boston	02128
 285	805 Toy Parade Unit 87	West Springfield	
-286	764 Feil Route	Boston	02108
+invalid-example	764 Feil Route	Boston	02108
 287	448 Langworth Trailer Suite 29	West Springfield	
 288	468 Smitham Union Suite 32	Middleborough	
 289	783 Hessel Knoll	Manchester-by-the-Sea	
@@ -327,7 +327,7 @@ invalid-example	341 Langosh Meadow Unit 31	Boston	02122
 326	914 Wyman Dam	Waltham	
 327	578 Welch Trace Unit 19	Bridgewater	
 328	816 Dickinson Union Apt 15	Brookline	02446
-329	769 DuBuque Corner	Stoughton	
+invalid-example	769 DuBuque Corner	Stoughton	
 330	528 Swift Run Apt 95	West Springfield	
 331	266 Spencer Mission	Ipswich	01938
 332	201 Dietrich Mall Suite 96	Hopkinton	01748
@@ -406,7 +406,7 @@ invalid-example	341 Langosh Meadow Unit 31	Boston	02122
 405	655 Bergnaum Parade	Stoneham	
 406	623 Runolfsson Annex Suite 88	Revere	02151
 407	971 Terry Union	Chester	
-408	732 Hegmann Rue	Haverhill	
+invalid-example	732 Hegmann Rue	Haverhill	
 409	296 Johnson Harbor Unit 32	Lynn	01904
 410	941 Tillman Plaza	Chatham	02633
 411	482 McGlynn Extension Apt 8	Chicopee	01022
@@ -508,7 +508,7 @@ invalid-example	341 Langosh Meadow Unit 31	Boston	02122
 507	1017 Spencer Row	Marblehead	01945
 508	239 Krajcik Brook	Boston	02128
 509	1026 Boehm Highlands	Uxbridge	
-510	955 Hettinger Esplanade Apt 98	Boston	02109
+invalid-example	955 Hettinger Esplanade Apt 98	Boston	02109
 511	535 Ebert Trail Apt 1	Somerville	02143
 512	257 Gutmann Highlands Apt 89	Hopkinton	01748
 513	889 Schaefer Forge	Chatham	02633
@@ -529,13 +529,13 @@ invalid-example	341 Langosh Meadow Unit 31	Boston	02122
 528	431 Goldner Gardens	Boston	02128
 529	384 Parisian Manor Apt 10	Barnstable	02648
 530	340 Walker Mill Suite 93	Fall River	02724
-invalid-example	1022 Windler Vista	Millville	
+531	1022 Windler Vista	Millville	
 532	222 Weimann Parade Apt 21	Billerica	
 533	170 Kerluke Extension Suite 51	Chatham	02633
 534	314 Haag Orchard Suite 76	Weymouth	02190
 535	584 Strosin Overpass	Millis	
 536	192 Wilderman Trafficway Unit 13	Canton	
-invalid-example	525 Mills Quay Apt 74	Douglas	
+537	525 Mills Quay Apt 74	Douglas	
 538	1048 Weimann Throughway	Northborough	
 539	982 Mueller Rue	Chelsea	02151
 540	196 Harris Heights	Ayer	01434
@@ -568,7 +568,7 @@ invalid-example	525 Mills Quay Apt 74	Douglas
 567	610 Harber Rapid Unit 87	Greenfield	
 568	775 Johnson Arcade Unit 42	Gloucester	
 569	324 Hettinger Mill	Concord	
-invalid-example	722 Treutel Neck	Boston	02121
+570	722 Treutel Neck	Boston	02121
 571	599 Schuppe Route Suite 25	Worcester	01608
 572	1007 Pagac Road Apt 92	Cambridge	02141
 573	607 Cruickshank Ramp	Newton	02461
@@ -624,7 +624,7 @@ invalid-example	722 Treutel Neck	Boston	02121
 623	267 Wuckert Hollow Unit 11	Shrewsbury	
 624	503 Carter Light Apt 12	Auburn	
 625	820 Monahan Wall	Brookline	02445
-invalid-example	1071 Brown Ferry	Woburn	
+626	1071 Brown Ferry	Woburn	
 627	472 Langworth Vista	Newton	02460
 628	139 Braun Flat	Peabody	01940
 629	643 Simonis Crossroad	Danvers	

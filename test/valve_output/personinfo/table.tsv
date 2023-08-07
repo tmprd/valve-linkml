@@ -1,0 +1,23 @@
+table	path	description	type
+column	test/valve_output/personinfo/column.tsv	Columns for all of the tables.	column
+datatype	test/valve_output/personinfo/datatype.tsv	Datatypes for all of the columns	datatype
+table	test/valve_output/personinfo/table.tsv	All of the user-editable tables in this project.	table
+NamedThing	test/valve_output/personinfo/data/NamedThing.tsv	A generic grouping for any identifiable entity	
+Person	test/valve_output/personinfo/data/Person.tsv	A person (alive, dead, undead, or fictional).	
+HasAliases	test/valve_output/personinfo/data/HasAliases.tsv	A mixin applied to any class that can have aliases/alternateNames	
+Organization	test/valve_output/personinfo/data/Organization.tsv	An organization such as a company or university	
+Place	test/valve_output/personinfo/data/Place.tsv		
+Address	test/valve_output/personinfo/data/Address.tsv		
+Event	test/valve_output/personinfo/data/Event.tsv		
+Concept	test/valve_output/personinfo/data/Concept.tsv		
+DiagnosisConcept	test/valve_output/personinfo/data/DiagnosisConcept.tsv		
+ProcedureConcept	test/valve_output/personinfo/data/ProcedureConcept.tsv		
+Relationship	test/valve_output/personinfo/data/Relationship.tsv		
+FamilialRelationship	test/valve_output/personinfo/data/FamilialRelationship.tsv		
+EmploymentEvent	test/valve_output/personinfo/data/EmploymentEvent.tsv		
+MedicalEvent	test/valve_output/personinfo/data/MedicalEvent.tsv		
+WithLocation	test/valve_output/personinfo/data/WithLocation.tsv		
+Container	test/valve_output/personinfo/data/Container.tsv		
+FamilialRelationshipType	test/valve_output/personinfo/data/FamilialRelationshipType.tsv		
+GenderType	test/valve_output/personinfo/data/GenderType.tsv		
+DiagnosisType	test/valve_output/personinfo/data/DiagnosisType.tsv		

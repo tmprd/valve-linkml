@@ -74,8 +74,8 @@ def test_schema_mapping(yaml_schema_path: str, mapped_schema_tables: dict):
 
 if __name__ == "__main__":
     base_dir = "test/"
-    input_file = os.path.join(base_dir, "linkml_input", "personinfo.yaml")
-    output_dir = os.path.join(base_dir, "valve_output")
+    input_file = os.path.join(base_dir, "linkml_input", "personinfo", "personinfo.yaml")
+    output_dir = os.path.join(base_dir, "valve_output", "personinfo")
 
     mapped_schema_tables = valve_linkml.linkml2valve.linkml2valve(input_file, output_dir, data_dir=None, generate_data=True, log_verbosely=True)
 
