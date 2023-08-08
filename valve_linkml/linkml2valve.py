@@ -36,13 +36,18 @@ def main():
     parser.add_argument("-v", "--verbose", help="Boolean option log verbosely.")
     args = parser.parse_args()
 
+    # Validate args
+    # check if output dir exists
+    if not os.path.isdir(args.output_dir):
+        raise ValueError(f"Output directory '{args.output_dir}' does not exist.")
+
     # Run
     linkml2valve(args.yaml_schema_path, args.output_dir, args.data_dir, args.generate_data, args.verbose)
 
 
 def linkml2valve(yaml_schema_path: str, output_dir: str, data_dir: str = None, generate_data: bool = False, log_verbosely: bool = False):
     if log_verbosely:
-        LOGGER.setLevel(level=logging.DEBUG)
+        LOGGER.setLevel(level=logging.INFO)
 
     # Map LinkML schema to VALVE tables
     mapped_valve_schema: dict = map_schema(yaml_schema_path, output_dir)
@@ -93,6 +98,9 @@ def map_schema(yaml_schema_path: str, output_dir: str) -> dict[str, dict[str, st
     global SCHEMA_DEFAULT_RANGE
     # Data tables go in a subdirectory of the schema directory by default
     data_table_dir = os.path.join(output_dir, "data")
+    if not os.path.isdir(data_table_dir):
+        os.mkdir(data_table_dir)
+        LOGGER.info(f"Created data directory '{data_table_dir}'")
 
     # Parse schema
     linkml_schema = SchemaView(yaml_schema_path)
@@ -162,7 +170,7 @@ def map_class_slots(linkml_schema: SchemaView, linkml_class: ClassDefinition,
 
         # Map the range of a class-specific slot_usage to a new Datatype row if the range is not a class or enum. This should be the dataype of the new Column row.
         slot_usage = linkml_class.slot_usage.get(slot.name)
-        if slot_usage and not any(e for e in all_enums if e.name == slot_usage.range) and not any(e for e in all_classes if e.name == slot_usage.range):
+        if slot_usage and is_datatype(slot_usage.range, all_enums, all_classes):
             # Create a new Datatype for this slot usage. Then set that as the "datatype" in the Column table.
             # Example: "primary_email" in Person uses a "person_primary_email" datatype.
             slot_usage_datatype = f"{linkml_class.name.lower()}_{slot_usage.name}"
@@ -201,6 +209,10 @@ def map_multivalued_slots(all_slots: List[SlotDefinition],
         if not slot.multivalued: continue
         slot_class = next((c for c in all_classes if slot.name in c.slots), None)
         if slot_class is None: continue
+        if slot.range is None: continue # raise Exception(f"Error: No range found for multivalued slot '{slot.name}'.")
+        if is_datatype(slot.range, [], all_classes):
+            LOGGER.debug(f"Skipping multivalued {slot.name} with range '{slot.range}' which is a datatype")
+            continue
         column_rows.append(map_multivalued_slot(slot, slot_class, all_column_rows))
     return all_column_rows + column_rows
 
@@ -336,6 +348,8 @@ def is_slot_inherited(linkml_class: ClassDefinition, slot: SlotDefinition) -> bo
 def is_enum_table(table_name, enum_primary_key, column_dicts):
     return any(c for c in column_dicts if c["table"] == table_name and c["column"] == enum_primary_key)
 
+def is_datatype(slot_range, all_enums, all_classes):
+    return not any(e for e in all_enums if e.name == slot_range) and not any(e for e in all_classes if e.name == slot_range)
 
 def validate_schema(classes: List[ClassDefinition], slots: List[SlotDefinition], enums: List[EnumDefinition]):
     # Check for slots not associated to a class

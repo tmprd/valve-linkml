@@ -24,7 +24,7 @@ def table_row(table_name: str, table_description: str, table_dir: str):
     return {
         "table": table_name,
         "path": f'{table_dir}/{table_name}.tsv',
-        "description": table_description,
+        "description": table_description.strip() if table_description else None,
         "type": None,
     }
 
