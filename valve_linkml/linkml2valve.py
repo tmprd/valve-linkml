@@ -252,7 +252,7 @@ def map_class_slot(schemaView: SchemaView, slot: SlotDefinition, slot_class: Cla
     # If the slot is multivalued, don't add it as a column for this table.
     # Instead, this will be mapped to another table after all class slots have been mapped and primary keys are generated.
     if slot.multivalued:
-        LOGGER.info(f"Skipping multivalued slot '{slot.name}' in class '{slot_class.name}' for now.", )
+        # LOGGER.info(f"Skipping multivalued slot '{slot.name}' in class '{slot_class.name}' for now.", )
         return None
 
     column_datatype = DEFAULT_DATATYPE
