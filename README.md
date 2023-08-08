@@ -1,5 +1,5 @@
 # VALVE - LinkML
-Convert LinkML schema + data to VALVE tables and vice versa.
+Convert LinkML schema + data to VALVE tables
 
 ## Setup
 `python3 -m pip install .`
@@ -16,11 +16,12 @@ python3 -m test.test_linkml2valve
 ### Test VALVE validation
 ```shell
 # PersonInfo - this will generate a VALVE sqlite db in the specified location
-rm test/valve_output/personinfo.db
+rm test/valve_output/personinfo/personinfo.db
 ontodev_valve test/valve_output/personinfo/table.tsv test/valve_output/personinfo/personinfo.db --verbose
 # 
 
 # Biolink
+rm test/valve_output/biolink/biolink.db
 ontodev_valve test/valve_output/biolink/table.tsv test/valve_output/biolink/biolink.db --verbose
 ```
 

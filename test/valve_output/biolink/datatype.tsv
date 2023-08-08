@@ -1,0 +1,120 @@
+datatype	parent	transform	condition	structure	description	SQLite type	PostgreSQL type	RDF type	HTML type
+CURIE	nonspace		match(/\S+:\S+/)	"concat(prefix, "":"", suffix)"	a Compact URI			CURIE	
+IRI	nonspace		exclude(/\s/)		an Internationalized Resource Identifier			IRI	
+column_name	trimmed_line		match(/\S([^\n]*\S)*/)		a column name				
+datatype_condition	line		exclude(/\n/)		a datatype condition specification				
+datatype_name	word		exclude(/\W/)		a datatype name				
+description	trimmed_text		match(/\S(.*\S)*/)		a brief description				
+empty	text		equals('')		the empty string	NULL	NULL	null	
+integer	nonspace		match(/-?\d+/)		a positive or negative integer	INTEGER	INTEGER		
+label	trimmed_line		match(/\S([^\n]*\S)*/)						
+line	text		exclude(/\n/)		a line of text				input
+nonspace	trimmed_line		exclude(/\s/)		text without whitespace				
+path	line		exclude(/\n/)		a path to a file				
+prefix	word		exclude(/\W/)		a prefix for a CURIE				
+suffix	word		exclude(/\W/)		a suffix for a CURIE				
+table_name	word		exclude(/\W/)		a table name				
+table_type	word	lowercase	in('table', 'column', 'datatype')		a table type				
+text					any text	TEXT	VARCHAR(100)	xsd:string	textarea
+trimmed_line	line		match(/\S([^\n]*\S)*/)		a line of text that does not begin or end with whitespace				
+trimmed_text	text		exclude(/^\s+|\s+$/)		text that does not begin or end with whitespace				
+word	nonspace		exclude(/\W/)		a single word: letters, numbers, underscore				
+chemical formula value	text				a chemical formula value				
+category type	text				a category type				
+iri type	text				a iri type				
+label type	text				a label type				
+predicate type	text				a predicate type				
+narrative text	text				a narrative text				
+symbol type	text				a symbol type				
+frequency value	text				a frequency value				
+percentage frequency value	text				a percentage frequency value				
+quotient	text				a quotient				
+unit	text				a unit				
+time type	text				a time type				
+biological sequence	text				a biological sequence				
+string	text				a string				
+boolean	text				a boolean				
+float	text				a float				
+double	text				a double				
+decimal	text				a decimal				
+time	text				a time				
+date	text				a date				
+datetime	text				a datetime				
+date_or_datetime	text				a date_or_datetime				
+uriorcurie	text				a uriorcurie				
+curie	text				a curie				
+uri	text				a uri				
+ncname	text				a ncname				
+objectidentifier	text				a objectidentifier				
+nodeidentifier	text				a nodeidentifier				
+attribute_name	text				a attribute_name				
+agent_id	text				a agent_id				
+agent_name	text				a agent_name				
+publication_id	text				a publication_id				
+publication_name	text				a publication_name				
+book_id	text				a book_id				
+book chapter_published in	text				a book chapter_published in				
+serial_id	text				a serial_id				
+article_published in	text				a article_published in				
+article_iso abbreviation	text				a article_iso abbreviation				
+retrieval source_resource id	text				a retrieval source_resource id				
+retrieval source_resource role	text				a retrieval source_resource role				
+retrieval source_upstream resource ids	text				a retrieval source_upstream resource ids				
+small molecule_id	text				a small molecule_id				
+macromolecular machine mixin_name	text				a macromolecular machine mixin_name				
+sequence variant_has biological sequence	text				a sequence variant_has biological sequence				
+sequence variant_id	text				a sequence variant_id				
+clinical measurement_has attribute type	text				a clinical measurement_has attribute type				
+chemical entity assesses named thing association_predicate	text				a chemical entity assesses named thing association_predicate				
+contributor association_predicate	text				a contributor association_predicate				
+genotype to genotype part association_predicate	text				a genotype to genotype part association_predicate				
+genotype to gene association_predicate	text				a genotype to gene association_predicate				
+genotype to variant association_predicate	text				a genotype to variant association_predicate				
+gene to gene homology association_predicate	text				a gene to gene homology association_predicate				
+gene to gene family association_predicate	text				a gene to gene family association_predicate				
+gene expression mixin_quantifier qualifier	text				a gene expression mixin_quantifier qualifier				
+gene to gene coexpression association_predicate	text				a gene to gene coexpression association_predicate				
+pairwise gene to gene interaction_predicate	text				a pairwise gene to gene interaction_predicate				
+pairwise molecular interaction_predicate	text				a pairwise molecular interaction_predicate				
+pairwise molecular interaction_id	text				a pairwise molecular interaction_id				
+chemical to chemical derivation association_predicate	text				a chemical to chemical derivation association_predicate				
+chemical or drug or treatment to disease or phenotypic feature association_predicate	text				a chemical or drug or treatment to disease or phenotypic feature association_predicate				
+chemical or drug or treatment side effect disease or phenotypic feature association_predicate	text				a chemical or drug or treatment side effect disease or phenotypic feature association_predicate				
+molecular activity to pathway association_predicate	text				a molecular activity to pathway association_predicate				
+named thing associated with likelihood of named thing association_predicate	text				a named thing associated with likelihood of named thing association_predicate				
+chemical gene interaction association_predicate	text				a chemical gene interaction association_predicate				
+chemical affects gene association_predicate	text				a chemical affects gene association_predicate				
+chemical affects gene association_qualified predicate	text				a chemical affects gene association_qualified predicate				
+material sample derivation association_predicate	text				a material sample derivation association_predicate				
+material sample derivation association_object	text				a material sample derivation association_object				
+information content entity to named thing association_subject	text				a information content entity to named thing association_subject				
+information content entity to named thing association_predicate	text				a information content entity to named thing association_predicate				
+disease or phenotypic feature to genetic inheritance association_predicate	text				a disease or phenotypic feature to genetic inheritance association_predicate				
+genotype to phenotypic feature association_predicate	text				a genotype to phenotypic feature association_predicate				
+gene to disease or phenotypic feature association_predicate	text				a gene to disease or phenotypic feature association_predicate				
+druggable gene to disease association_predicate	text				a druggable gene to disease association_predicate				
+variant to gene association_predicate	text				a variant to gene association_predicate				
+variant to gene expression association_predicate	text				a variant to gene expression association_predicate				
+variant to population association_has count	text				a variant to population association_has count				
+variant to population association_has total	text				a variant to population association_has total				
+variant to population association_has quotient	text				a variant to population association_has quotient				
+population to population association_predicate	text				a population to population association_predicate				
+variant to disease association_subject	text				a variant to disease association_subject				
+variant to disease association_predicate	text				a variant to disease association_predicate				
+variant to disease association_object	text				a variant to disease association_object				
+genotype to disease association_subject	text				a genotype to disease association_subject				
+genotype to disease association_predicate	text				a genotype to disease association_predicate				
+genotype to disease association_object	text				a genotype to disease association_object				
+gene has variant that contributes to disease association_predicate	text				a gene has variant that contributes to disease association_predicate				
+gene to expression site association_predicate	text				a gene to expression site association_predicate				
+gene to expression site association_quantifier qualifier	text				a gene to expression site association_quantifier qualifier				
+genomic sequence localization_predicate	text				a genomic sequence localization_predicate				
+gene to gene product relationship_predicate	text				a gene to gene product relationship_predicate				
+chemical entity or gene or gene product regulates gene association_predicate	text				a chemical entity or gene or gene product regulates gene association_predicate				
+anatomical entity to anatomical entity part of association_predicate	text				a anatomical entity to anatomical entity part of association_predicate				
+anatomical entity to anatomical entity ontogenic association_predicate	text				a anatomical entity to anatomical entity ontogenic association_predicate				
+organism taxon to organism taxon specialization_predicate	text				a organism taxon to organism taxon specialization_predicate				
+organism taxon to organism taxon interaction_predicate	text				a organism taxon to organism taxon interaction_predicate				
+organism taxon to organism taxon interaction_associated environmental context	text				a organism taxon to organism taxon interaction_associated environmental context				
+organism taxon to environment association_predicate	text				a organism taxon to environment association_predicate				
+organism taxon to environment association_object	text				a organism taxon to environment association_object				

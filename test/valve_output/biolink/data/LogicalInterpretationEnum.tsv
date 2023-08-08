@@ -1,0 +1,4 @@
+permissible_value	meaning
+some_some	os:SomeSomeInterpretation
+all_some	os:AllSomeInterpretation
+inverse_all_some	

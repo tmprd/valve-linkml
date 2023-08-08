@@ -1,0 +1,16 @@
+permissible_value	meaning
+discovery_and_development_phase	
+preclinical_research_phase	
+fda_clinical_research_phase	
+fda_review_phase_4	
+fda_post_market_safety_review	
+fda_clinical_research_phase_1	
+fda_clinical_research_phase_2	
+fda_clinical_research_phase_3	
+fda_clinical_research_phase_4	
+fda_fast_track	
+fda_breakthrough_therapy	
+fda_accelerated_approval	
+fda_priority_review	
+regular_fda_approval	
+post_approval_withdrawal	
