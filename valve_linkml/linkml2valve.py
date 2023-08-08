@@ -6,7 +6,7 @@ from argparse import ArgumentParser
 
 from linkml_runtime.utils.schemaview import SchemaView, SlotDefinition, ClassDefinition, ClassDefinitionName, EnumDefinition
 
-from .valve_schema import VALVE_SCHEMA, table_row, column_row, datatype_row, primary_structure, from_structure, prepend_valve_tables
+from .valve_schema import VALVE_SCHEMA, table_row, column_row, datatype_row, primary_structure, from_structure, format_table_name, prepend_valve_tables
 from .utils import write_dicts2tsv
 from .data_generator import generate_schema_data
 
@@ -93,6 +93,7 @@ def serialize_valve_tables(schema_tables: List[dict], data_tables: List[dict]) -
                         write_dicts2tsv(enum_table_path, enum_data_table["rows"], enum_table_headers)
                         LOGGER.debug(f"Wrote {len(enum_data_table['rows'])} enum rows to '{enum_table_path}'")
 
+                # TODO VALVE requires each table to exist as a data file, even if empty. Need to create here, and change the data generator to overwrite these
 
 def map_schema(yaml_schema_path: str, output_dir: str) -> dict[str, dict[str, str]]:
     global SCHEMA_DEFAULT_RANGE
@@ -211,7 +212,12 @@ def map_multivalued_slots(all_slots: List[SlotDefinition],
         if slot_class is None: continue
         if slot.range is None: continue # raise Exception(f"Error: No range found for multivalued slot '{slot.name}'.")
         if is_datatype(slot.range, [], all_classes):
-            LOGGER.debug(f"Skipping multivalued {slot.name} with range '{slot.range}' which is a datatype")
+            LOGGER.debug(f"Skipping multivalued '{slot.name}' with range '{slot.range}' because the range is a datatype")
+            continue
+        # Check if this table & column already exist - could have been generated from another class slot with the same range
+        existing_column = next((c for c in column_rows if c["table"] == format_table_name(slot.range) and c["column"] == slot_class.name), None)
+        if existing_column:
+            LOGGER.warning(f"Skipping multivalued '{slot.name}' with range '{slot.range}' because {existing_column['table']}.{existing_column['column']} has already been generated from another slot with description: '{existing_column['description']}'")
             continue
         column_rows.append(map_multivalued_slot(slot, slot_class, all_column_rows))
     return all_column_rows + column_rows
@@ -290,10 +296,18 @@ def map_multivalued_slot(slot: SlotDefinition, slot_class: ClassDefinition, all_
     # Ex. Person                        =>    table: "MedicalEvent", 
     #       - has_medical_history:      =>    column: "person",
     #           multivalued: true       =>    structure: from(Person.id)
-    #           range: MedicalEvent 
+    #           range: MedicalEvent     =>    "has_medical_history" is NOT added as column in the "Patient" table
+
+    # Ex. association                           => table: ontology_class
+    #       - subject category:                 => column: association
+    #               range: ontology class       => structure: from(association.id)
+    #       - subject category closure:
+    #               multivalued: true
+    #               range: ontology class
+    #                                     
 
     # Get the primary key of the table that serves as the range of this slot
-    slot_class_table_rows = [c for c in all_column_rows if c["table"] == slot_class.name]
+    slot_class_table_rows = [c for c in all_column_rows if c["table"] == format_table_name(slot_class.name)]
     slot_range_class_primary_key_column = next((c for c in slot_class_table_rows if c["structure"] == primary_structure()), None)
 
     mapping_message = f"Mapping multivalued slot '{slot.name}' with range '{slot.range}' in class '{slot_class.name}'"
