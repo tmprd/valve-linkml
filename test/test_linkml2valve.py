@@ -42,7 +42,7 @@ def test_schema_mapping(yaml_schema_path: str, mapped_schema_tables: dict):
 
     # TODO: Every LinkML slot_usage should be the transformed value of some "datatype" column in the Datatype table, and some "datatype" column in the Column table
 
-    # TODO: Every LinkML multivalued slot range should be the transformed value of some foreign key "structure" in the Column table
+    # TODO: Every LinkML multivalued slot range, that isn't a datatype, should be the transformed value of some foreign key "structure" in the Column table
 
     # TODO: Every LinkML slot range that is a LinkML class should be the transformed value of some foreign key "structure" in the Column table
 
@@ -72,6 +72,11 @@ def test_schema_mapping(yaml_schema_path: str, mapped_schema_tables: dict):
     # TODO: Datatype table should include VALVE metadata rows
 
 
+def test_serialization(mapped_schema_tables: dict):
+    # TODO: Example TSVs should not be empty
+    raise NotImplementedError()
+
+
 if __name__ == "__main__":
     base_dir = "test/"
     input_file = os.path.join(base_dir, "linkml_input", "personinfo", "personinfo.yaml")
@@ -80,3 +85,4 @@ if __name__ == "__main__":
     mapped_schema_tables = valve_linkml.linkml2valve.linkml2valve(input_file, output_dir, data_dir=None, generate_data=True, log_verbosely=True)
 
     test_schema_mapping(input_file, mapped_schema_tables)
+    #test_serialization(mapped_schema_tables)

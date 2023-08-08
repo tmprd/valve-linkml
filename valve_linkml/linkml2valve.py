@@ -47,11 +47,14 @@ def main():
 
 def linkml2valve(yaml_schema_path: str, output_dir: str, data_dir: str = None, generate_data: bool = False, log_verbosely: bool = False):
     if log_verbosely:
-        LOGGER.setLevel(level=logging.INFO)
+        LOGGER.setLevel(level=logging.DEBUG)
 
     # Map LinkML schema to VALVE tables
     mapped_valve_schema: dict = map_schema(yaml_schema_path, output_dir)
     schema_tables = mapped_valve_schema["schema_tables"]
+
+    # Write data table TSVs (without VALVE metadata rows)
+    serialize_data_tables(schema_tables, mapped_valve_schema["data_tables"])
 
     # Create the data table files with some generated data (exclude VALVE metadata rows by not adding them yet, and Enum tables)
     if generate_data:
@@ -60,8 +63,8 @@ def linkml2valve(yaml_schema_path: str, output_dir: str, data_dir: str = None, g
     # Prepend VALVE metadata rows to mapped schema tables
     schema_tables = prepend_valve_tables(schema_tables, output_dir, LOGGER)
 
-    # Write to TSVs
-    serialize_valve_tables(schema_tables, mapped_valve_schema["data_tables"])
+    # Write schema/meta "config" table TSVs (with VALVE metadata rows prepended), ex. table, column, datatype
+    serialize_schema_tables(schema_tables)
 
     # Map LinkML yaml data and serialize to VALVE data TSVs
     if data_dir is not None:
@@ -70,30 +73,29 @@ def linkml2valve(yaml_schema_path: str, output_dir: str, data_dir: str = None, g
     return schema_tables
 
 
-def serialize_valve_tables(schema_tables: List[dict], data_tables: List[dict]) -> List[dict]:
-    # Serialize the combined VALVE schema and mapped LinkML schema to TSVs
+def serialize_schema_tables(schema_tables: List[dict]):
+    # Serialize the combined VALVE schema and mapped LinkML schema to VALVE "config" TSVs, ex. table, column, datatype
     for schema_table_name in schema_tables:
-        table_dict = schema_tables[schema_table_name]
-        table_path = table_dict["path"]
-        LOGGER.debug(f"Wrote {len(table_dict['rows'])} rows to '{table_path}'")
-        write_dicts2tsv(table_path, table_dict["rows"], VALVE_SCHEMA["tables"][schema_table_name]["headers"])
+        schema_table_dict = schema_tables[schema_table_name]
+        schema_table_path = schema_table_dict["path"]
+        write_dicts2tsv(schema_table_path, schema_table_dict["rows"], VALVE_SCHEMA["tables"][schema_table_name]["headers"])
+        LOGGER.debug(f"Wrote schema table {len(schema_table_dict['rows'])} rows to '{schema_table_path}'")
 
-        # Serialize Enum tables listed in the Table table, and add data to them
+
+def serialize_data_tables(schema_tables: List[dict], data_tables: List[dict]):
+    # Serialize data tables listed in the Table table, and add data to them
+    for schema_table_name in schema_tables:
         if schema_table_name == "table":
-            # For each table in the metatable
-            for table_row in table_dict["rows"]:
+            schema_table_dict = schema_tables[schema_table_name]
+            for table_row in schema_table_dict["rows"]:
                 table_name = table_row["table"]
-                # If enum table
-                if is_enum_table(table_name, ENUM_PRIMARY_KEY, schema_tables["column"]["rows"]):
-                    enum_table_path = table_row["path"]
-                    enum_table_headers = [c["column"] for c in schema_tables["column"]["rows"] if c["table"] == table_name]
-                    # Get the enum data and write it to the enum table
-                    enum_data_table = next((t for t in data_tables if t["table"] == table_name), None)
-                    if enum_data_table is not None:
-                        write_dicts2tsv(enum_table_path, enum_data_table["rows"], enum_table_headers)
-                        LOGGER.debug(f"Wrote {len(enum_data_table['rows'])} enum rows to '{enum_table_path}'")
+                table_path = table_row["path"]
+                table_headers = [c["column"] for c in schema_tables["column"]["rows"] if c["table"] == table_name]
+                table_data_rows = next((t for t in data_tables if t["table"] == table_name), {}).get("rows")
+                write_dicts2tsv(table_path, table_data_rows, table_headers)
+                if table_data_rows:
+                    LOGGER.debug(f"Wrote data table {len(table_data_rows)} rows to '{table_path}'")
 
-                # TODO VALVE requires each table to exist as a data file, even if empty. Need to create here, and change the data generator to overwrite these
 
 def map_schema(yaml_schema_path: str, output_dir: str) -> dict[str, dict[str, str]]:
     global SCHEMA_DEFAULT_RANGE
@@ -304,7 +306,6 @@ def map_multivalued_slot(slot: SlotDefinition, slot_class: ClassDefinition, all_
     #       - subject category closure:
     #               multivalued: true
     #               range: ontology class
-    #                                     
 
     # Get the primary key of the table that serves as the range of this slot
     slot_class_table_rows = [c for c in all_column_rows if c["table"] == format_table_name(slot_class.name)]
