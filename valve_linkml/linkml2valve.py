@@ -6,7 +6,7 @@ from argparse import ArgumentParser
 
 from linkml_runtime.utils.schemaview import SchemaView, SlotDefinition, ClassDefinition, ClassDefinitionName, EnumDefinition
 
-from .valve_schema import VALVE_SCHEMA, table_row, column_row, datatype_row, primary_structure, from_structure, prepend_valve_tables
+from .valve_schema import VALVE_SCHEMA, table_row, column_row, datatype_row, primary_structure, from_structure, format_table_name, prepend_valve_tables
 from .utils import write_dicts2tsv
 from .data_generator import generate_schema_data
 
@@ -36,6 +36,11 @@ def main():
     parser.add_argument("-v", "--verbose", help="Boolean option log verbosely.")
     args = parser.parse_args()
 
+    # Validate args
+    # check if output dir exists
+    if not os.path.isdir(args.output_dir):
+        raise ValueError(f"Output directory '{args.output_dir}' does not exist.")
+
     # Run
     linkml2valve(args.yaml_schema_path, args.output_dir, args.data_dir, args.generate_data, args.verbose)
 
@@ -48,6 +53,9 @@ def linkml2valve(yaml_schema_path: str, output_dir: str, data_dir: str = None, g
     mapped_valve_schema: dict = map_schema(yaml_schema_path, output_dir)
     schema_tables = mapped_valve_schema["schema_tables"]
 
+    # Write data table TSVs (without VALVE metadata rows)
+    serialize_data_tables(schema_tables, mapped_valve_schema["data_tables"])
+
     # Create the data table files with some generated data (exclude VALVE metadata rows by not adding them yet, and Enum tables)
     if generate_data:
         generate_schema_data(schema_tables["table"]["rows"], schema_tables["column"]["rows"], LOGGER)
@@ -55,8 +63,8 @@ def linkml2valve(yaml_schema_path: str, output_dir: str, data_dir: str = None, g
     # Prepend VALVE metadata rows to mapped schema tables
     schema_tables = prepend_valve_tables(schema_tables, output_dir, LOGGER)
 
-    # Write to TSVs
-    serialize_valve_tables(schema_tables, mapped_valve_schema["data_tables"])
+    # Write schema/meta "config" table TSVs (with VALVE metadata rows prepended), ex. table, column, datatype
+    serialize_schema_tables(schema_tables)
 
     # Map LinkML yaml data and serialize to VALVE data TSVs
     if data_dir is not None:
@@ -65,34 +73,37 @@ def linkml2valve(yaml_schema_path: str, output_dir: str, data_dir: str = None, g
     return schema_tables
 
 
-def serialize_valve_tables(schema_tables: List[dict], data_tables: List[dict]) -> List[dict]:
-    # Serialize the combined VALVE schema and mapped LinkML schema to TSVs
+def serialize_schema_tables(schema_tables: List[dict]):
+    # Serialize the combined VALVE schema and mapped LinkML schema to VALVE "config" TSVs, ex. table, column, datatype
     for schema_table_name in schema_tables:
-        table_dict = schema_tables[schema_table_name]
-        table_path = table_dict["path"]
-        LOGGER.debug(f"Wrote {len(table_dict['rows'])} rows to '{table_path}'")
-        write_dicts2tsv(table_path, table_dict["rows"], VALVE_SCHEMA["tables"][schema_table_name]["headers"])
+        schema_table_dict = schema_tables[schema_table_name]
+        schema_table_path = schema_table_dict["path"]
+        write_dicts2tsv(schema_table_path, schema_table_dict["rows"], VALVE_SCHEMA["tables"][schema_table_name]["headers"])
+        LOGGER.debug(f"Wrote schema table {len(schema_table_dict['rows'])} rows to '{schema_table_path}'")
 
-        # Serialize Enum tables listed in the Table table, and add data to them
+
+def serialize_data_tables(schema_tables: List[dict], data_tables: List[dict]):
+    # Serialize data tables listed in the Table table, and add data to them
+    for schema_table_name in schema_tables:
         if schema_table_name == "table":
-            # For each table in the metatable
-            for table_row in table_dict["rows"]:
+            schema_table_dict = schema_tables[schema_table_name]
+            for table_row in schema_table_dict["rows"]:
                 table_name = table_row["table"]
-                # If enum table
-                if is_enum_table(table_name, ENUM_PRIMARY_KEY, schema_tables["column"]["rows"]):
-                    enum_table_path = table_row["path"]
-                    enum_table_headers = [c["column"] for c in schema_tables["column"]["rows"] if c["table"] == table_name]
-                    # Get the enum data and write it to the enum table
-                    enum_data_table = next((t for t in data_tables if t["table"] == table_name), None)
-                    if enum_data_table is not None:
-                        write_dicts2tsv(enum_table_path, enum_data_table["rows"], enum_table_headers)
-                        LOGGER.debug(f"Wrote {len(enum_data_table['rows'])} enum rows to '{enum_table_path}'")
+                table_path = table_row["path"]
+                table_headers = [c["column"] for c in schema_tables["column"]["rows"] if c["table"] == table_name]
+                table_data_rows = next((t for t in data_tables if t["table"] == table_name), {}).get("rows")
+                write_dicts2tsv(table_path, table_data_rows, table_headers)
+                if table_data_rows:
+                    LOGGER.debug(f"Wrote data table {len(table_data_rows)} rows to '{table_path}'")
 
 
 def map_schema(yaml_schema_path: str, output_dir: str) -> dict[str, dict[str, str]]:
     global SCHEMA_DEFAULT_RANGE
     # Data tables go in a subdirectory of the schema directory by default
     data_table_dir = os.path.join(output_dir, "data")
+    if not os.path.isdir(data_table_dir):
+        os.mkdir(data_table_dir)
+        LOGGER.info(f"Created data directory '{data_table_dir}'")
 
     # Parse schema
     linkml_schema = SchemaView(yaml_schema_path)
@@ -162,7 +173,7 @@ def map_class_slots(linkml_schema: SchemaView, linkml_class: ClassDefinition,
 
         # Map the range of a class-specific slot_usage to a new Datatype row if the range is not a class or enum. This should be the dataype of the new Column row.
         slot_usage = linkml_class.slot_usage.get(slot.name)
-        if slot_usage and not any(e for e in all_enums if e.name == slot_usage.range) and not any(e for e in all_classes if e.name == slot_usage.range):
+        if slot_usage and is_datatype(slot_usage.range, all_enums, all_classes):
             # Create a new Datatype for this slot usage. Then set that as the "datatype" in the Column table.
             # Example: "primary_email" in Person uses a "person_primary_email" datatype.
             slot_usage_datatype = f"{linkml_class.name.lower()}_{slot_usage.name}"
@@ -201,6 +212,15 @@ def map_multivalued_slots(all_slots: List[SlotDefinition],
         if not slot.multivalued: continue
         slot_class = next((c for c in all_classes if slot.name in c.slots), None)
         if slot_class is None: continue
+        if slot.range is None: continue # raise Exception(f"Error: No range found for multivalued slot '{slot.name}'.")
+        if is_datatype(slot.range, [], all_classes):
+            LOGGER.debug(f"Skipping multivalued '{slot.name}' with range '{slot.range}' because the range is a datatype")
+            continue
+        # Check if this table & column already exist - could have been generated from another class slot with the same range
+        existing_column = next((c for c in column_rows if c["table"] == format_table_name(slot.range) and c["column"] == slot_class.name), None)
+        if existing_column:
+            LOGGER.warning(f"Skipping multivalued '{slot.name}' with range '{slot.range}' because {existing_column['table']}.{existing_column['column']} has already been generated from another slot with description: '{existing_column['description']}'")
+            continue
         column_rows.append(map_multivalued_slot(slot, slot_class, all_column_rows))
     return all_column_rows + column_rows
 
@@ -232,7 +252,7 @@ def map_class_slot(schemaView: SchemaView, slot: SlotDefinition, slot_class: Cla
     # If the slot is multivalued, don't add it as a column for this table.
     # Instead, this will be mapped to another table after all class slots have been mapped and primary keys are generated.
     if slot.multivalued:
-        LOGGER.info(f"Skipping multivalued slot '{slot.name}' in class '{slot_class.name}' for now.", )
+        # LOGGER.info(f"Skipping multivalued slot '{slot.name}' in class '{slot_class.name}' for now.", )
         return None
 
     column_datatype = DEFAULT_DATATYPE
@@ -278,10 +298,17 @@ def map_multivalued_slot(slot: SlotDefinition, slot_class: ClassDefinition, all_
     # Ex. Person                        =>    table: "MedicalEvent", 
     #       - has_medical_history:      =>    column: "person",
     #           multivalued: true       =>    structure: from(Person.id)
-    #           range: MedicalEvent 
+    #           range: MedicalEvent     =>    "has_medical_history" is NOT added as column in the "Patient" table
+
+    # Ex. association                           => table: ontology_class
+    #       - subject category:                 => column: association
+    #               range: ontology class       => structure: from(association.id)
+    #       - subject category closure:
+    #               multivalued: true
+    #               range: ontology class
 
     # Get the primary key of the table that serves as the range of this slot
-    slot_class_table_rows = [c for c in all_column_rows if c["table"] == slot_class.name]
+    slot_class_table_rows = [c for c in all_column_rows if c["table"] == format_table_name(slot_class.name)]
     slot_range_class_primary_key_column = next((c for c in slot_class_table_rows if c["structure"] == primary_structure()), None)
 
     mapping_message = f"Mapping multivalued slot '{slot.name}' with range '{slot.range}' in class '{slot_class.name}'"
@@ -336,6 +363,8 @@ def is_slot_inherited(linkml_class: ClassDefinition, slot: SlotDefinition) -> bo
 def is_enum_table(table_name, enum_primary_key, column_dicts):
     return any(c for c in column_dicts if c["table"] == table_name and c["column"] == enum_primary_key)
 
+def is_datatype(slot_range, all_enums, all_classes):
+    return not any(e for e in all_enums if e.name == slot_range) and not any(e for e in all_classes if e.name == slot_range)
 
 def validate_schema(classes: List[ClassDefinition], slots: List[SlotDefinition], enums: List[EnumDefinition]):
     # Check for slots not associated to a class

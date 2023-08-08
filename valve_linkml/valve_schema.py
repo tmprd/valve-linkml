@@ -21,16 +21,18 @@ VALVE_SCHEMA = {
 }
 
 def table_row(table_name: str, table_description: str, table_dir: str):
+    formatted_table_name = format_table_name(table_name)
     return {
-        "table": table_name,
-        "path": f'{table_dir}/{table_name}.tsv',
-        "description": table_description,
+        "table": formatted_table_name,
+        "path": f'{table_dir}/{formatted_table_name}.tsv',
+        "description": table_description.strip() if table_description else None,
         "type": None,
     }
 
 def column_row(column_name: str, table_name: str, description: str, datatype: str, structure: str, is_required: bool):
+    formatted_table_name = format_table_name(table_name)
     return {
-        "table": table_name,
+        "table": formatted_table_name,
         "column": column_name,
         "nulltype": 'empty' if not is_required else None,
         "datatype": datatype,
@@ -79,6 +81,9 @@ def map_table_path(row: dict, output_dir: str):
     return dict(row, path=os.path.join(output_dir, row.get("table") + ".tsv"))
 
 
+def format_table_name(table_name):
+    return table_name.replace(" ", "_")
+
 def primary_structure():
     return "primary"
 
@@ -86,7 +91,8 @@ def is_from_structure(structure: str):
     return structure.startswith("from(")
 
 def from_structure(table_name: str, column_name: str):
-    return f'from({table_name}.{column_name})'
+    formatted_table_name = format_table_name(table_name)
+    return f'from({formatted_table_name}.{column_name})'
 
 def from_structure2table_column(from_structure: str):
     return from_structure.replace('from(', '').replace(')', '').split('.')

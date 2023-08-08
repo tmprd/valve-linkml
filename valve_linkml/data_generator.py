@@ -16,8 +16,9 @@ def generate_schema_data(data_table_dicts: List[dict], data_column_dicts: List[d
 
     # Map some pre-generated data to our data tables if we have the right kind
     table_names = [t["table"] for t in data_table_dicts]
+    pregenerated_table_data:dict = None
     if "Person" in table_names and "Address" in table_names:
-        pregenerated_table_data: dict = generate_tables_from_fhir_mapping(logger)
+        pregenerated_table_data = generate_tables_from_fhir_mapping(logger)
 
     # Create the data tables themselves
     for table_dict in data_table_dicts:
