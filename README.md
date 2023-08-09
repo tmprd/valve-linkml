@@ -1,5 +1,9 @@
 # VALVE - LinkML
-Convert LinkML schema + data to VALVE tables
+Convert [LinkML](https://github.com/linkml/linkml) schemas + data to [VALVE](https://github.com/ontodev/valve.py) tables
+
+## Requirements
+* [LinkML](requirements.txt)
+* [VALVE.py v0.2.1](https://github.com/ontodev/valve.py/releases/tag/v0.2.1) (requires Python 3.8) or [VALVE.rs v0.2.1](https://github.com/ontodev/valve.rs/releases/tag/v0.2.1)
 
 ## Setup
 `python3 -m pip install .`
