@@ -1,0 +1,23 @@
+table	path	description	type
+column	test/rltbl_output/personinfo/column.tsv	Columns for all of the tables.	column
+datatype	test/rltbl_output/personinfo/datatype.tsv	Datatypes for all of the columns	datatype
+table	test/rltbl_output/personinfo/table.tsv	All of the user-editable tables in this project.	table
+NamedThing	test/rltbl_output/personinfo/data/NamedThing.tsv	A generic grouping for any identifiable entity	
+Person	test/rltbl_output/personinfo/data/Person.tsv	A person (alive, dead, undead, or fictional).	
+HasAliases	test/rltbl_output/personinfo/data/HasAliases.tsv	A mixin applied to any class that can have aliases/alternateNames	
+Organization	test/rltbl_output/personinfo/data/Organization.tsv	An organization such as a company or university	
+Place	test/rltbl_output/personinfo/data/Place.tsv		
+Address	test/rltbl_output/personinfo/data/Address.tsv		
+Event	test/rltbl_output/personinfo/data/Event.tsv		
+Concept	test/rltbl_output/personinfo/data/Concept.tsv		
+DiagnosisConcept	test/rltbl_output/personinfo/data/DiagnosisConcept.tsv		
+ProcedureConcept	test/rltbl_output/personinfo/data/ProcedureConcept.tsv		
+Relationship	test/rltbl_output/personinfo/data/Relationship.tsv		
+FamilialRelationship	test/rltbl_output/personinfo/data/FamilialRelationship.tsv		
+EmploymentEvent	test/rltbl_output/personinfo/data/EmploymentEvent.tsv		
+MedicalEvent	test/rltbl_output/personinfo/data/MedicalEvent.tsv		
+WithLocation	test/rltbl_output/personinfo/data/WithLocation.tsv		
+Container	test/rltbl_output/personinfo/data/Container.tsv		
+FamilialRelationshipType	test/rltbl_output/personinfo/data/FamilialRelationshipType.tsv		
+GenderType	test/rltbl_output/personinfo/data/GenderType.tsv		
+DiagnosisType	test/rltbl_output/personinfo/data/DiagnosisType.tsv		

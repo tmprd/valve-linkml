@@ -1,6 +1,6 @@
 import os
-import valve_linkml.linkml2valve
-from valve_linkml.valve_schema import (
+import rltbl_linkml.linkml2rltbl
+from rltbl_linkml.rltbl_schema import (
     primary_structure,
     from_structure2table_column,
     is_from_structure,
@@ -54,16 +54,16 @@ def test_schema_mapping(yaml_schema_path: str, mapped_schema_tables: dict):
     # TODO: Every LinkML slot range that is a LinkML class should be the transformed value of
     # some foreign key "structure" in the Column table
 
-    # Table table should include VALVE metadata rows
-    valve_metadata_table_names = ["table", "column", "datatype"]
-    for table_name in valve_metadata_table_names:
+    # Table table should include RLTBL metadata rows
+    rltbl_metadata_table_names = ["table", "column", "datatype"]
+    for table_name in rltbl_metadata_table_names:
         if table_name not in all_table_names:
-            raise Exception(f"VALVE metadata table '{table_name}' not found in Table table")
+            raise Exception(f"RLTBL metadata table '{table_name}' not found in Table table")
 
-        # Column table should include VALVE metadata rows (Each valve metadata table name is the
+        # Column table should include RLTBL metadata rows (Each rltbl metadata table name is the
         # value of some "table" column in the Column table)
         if table_name not in all_column_table_names:
-            raise Exception(f"VALVE metadata '{table_name}' columns not found in Column table")
+            raise Exception(f"RLTBL metadata '{table_name}' columns not found in Column table")
 
     # If a Column table row has a foreign key "structure", then that should correspond to
     # exactly 1 other Column table row whose "structure" is a primary key
@@ -93,7 +93,7 @@ def test_schema_mapping(yaml_schema_path: str, mapped_schema_tables: dict):
                     "not have primary key 'structure'"
                 )
 
-    # TODO: Datatype table should include VALVE metadata rows
+    # TODO: Datatype table should include RLTBL metadata rows
 
 
 def test_serialization(mapped_schema_tables: dict):
@@ -104,9 +104,9 @@ def test_serialization(mapped_schema_tables: dict):
 if __name__ == "__main__":
     base_dir = "test/"
     input_file = os.path.join(base_dir, "linkml_input", "personinfo", "personinfo.yaml")
-    output_dir = os.path.join(base_dir, "valve_output", "personinfo")
+    output_dir = os.path.join(base_dir, "rltbl_output", "personinfo")
 
-    mapped_schema_tables = valve_linkml.linkml2valve.linkml2valve(
+    mapped_schema_tables = rltbl_linkml.linkml2rltbl.linkml2rltbl(
         input_file,
         output_dir,
         data_dir=None,

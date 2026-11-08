@@ -190,8 +190,8 @@ slots:
   current_address:
     description: >-
       The address at which a person currently lives
-    range: string
-    # range: Address
+    # range: string
+    range: Address
   age_in_years:
     range: integer
     minimum_value: 0

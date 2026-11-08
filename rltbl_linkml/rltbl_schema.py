@@ -4,7 +4,7 @@ import os
 import csv
 from typing import List, Callable
 
-VALVE_SCHEMA = {
+RLTBL_SCHEMA = {
     "tables": {
         "table": {
             "headers": ["table", "path", "description", "type"],
@@ -64,7 +64,7 @@ def datatype_row(datatype_name: str, datatype_description, regex: str):
     # TODO Map slot minimum_value & maximum_value to ...?
     return {
         "datatype": datatype_name,
-        "parent": VALVE_SCHEMA["defaults"]["datatype"],
+        "parent": RLTBL_SCHEMA["defaults"]["datatype"],
         "transform": None,
         "condition": (f"match(/{regex}/)" if regex else None),
         "structure": None,
@@ -77,40 +77,40 @@ def datatype_row(datatype_name: str, datatype_description, regex: str):
     }
 
 
-def prepend_valve_tables(schema_tables: dict, output_dir: str, logger):
+def prepend_rltbl_tables(schema_tables: dict, output_dir: str, logger):
     schema_tables["table"]["rows"] = (
-        init_valve_table(
-            "test/valve_sample_schema/table.tsv",
-            VALVE_SCHEMA["tables"],
+        init_rltbl_table(
+            "test/rltbl_sample_schema/table.tsv",
+            RLTBL_SCHEMA["tables"],
             lambda row: map_table_path(row, output_dir),
         )
         + schema_tables["table"]["rows"]
     )
     schema_tables["column"]["rows"] = (
-        init_valve_table("test/valve_sample_schema/column.tsv", VALVE_SCHEMA["tables"])
+        init_rltbl_table("test/rltbl_sample_schema/column.tsv", RLTBL_SCHEMA["tables"])
         + schema_tables["column"]["rows"]
     )
 
-    all_datatypes = init_valve_table("test/valve_sample_schema/datatype.tsv", None)
-    # Add new mapped datatypes only if there's no duplicately named VALVE datatype.
-    # Choose the VALVE datatype over the mapped one.
+    all_datatypes = init_rltbl_table("test/rltbl_sample_schema/datatype.tsv", None)
+    # Add new mapped datatypes only if there's no duplicately named RLTBL datatype.
+    # Choose the RLTBL datatype over the mapped one.
     for d in schema_tables["datatype"]["rows"]:
         if d["datatype"] not in [v["datatype"] for v in all_datatypes]:
             all_datatypes.append(d)
         else:
-            logger.warning(f"VALVE datatype {d['datatype']} already exists. Skipping.")
+            logger.warning(f"RLTBL datatype {d['datatype']} already exists. Skipping.")
     schema_tables["datatype"]["rows"] = all_datatypes
     return schema_tables
 
 
-def init_valve_table(
-    valve_tsv_path: str, column_filter: dict, map_valve_row: Callable = lambda row: row
+def init_rltbl_table(
+    rltbl_tsv_path: str, column_filter: dict, map_rltbl_row: Callable = lambda row: row
 ):
-    # TODO: Use VALVE lib to get metadata tables instead of a sample schema
-    with open(valve_tsv_path, "r") as table_file:
+    # TODO: Use RLTBL lib to get metadata tables instead of a sample schema
+    with open(rltbl_tsv_path, "r") as table_file:
         reader = csv.DictReader(table_file, delimiter="\t")
         return [
-            map_valve_row(row)
+            map_rltbl_row(row)
             for row in reader
             if (not column_filter) or (row.get("table") in column_filter)
         ]

@@ -1,5 +1,5 @@
 # Relatable - LinkML
-Convert [LinkML](https://github.com/linkml/linkml) schemas + data to [VALVE](https://github.com/ontodev/valve.py) tables
+Convert [LinkML](https://github.com/linkml/linkml) schemas + data to [Relatable](https://github.com/rltbl/relatable) tables
 
 ## Requirements
 * [Relatable](https://github.com/rltbl/relatable)
@@ -34,24 +34,24 @@ Convert [LinkML](https://github.com/linkml/linkml) schemas + data to [VALVE](htt
 
 ## Show usage
 
-    python3 -m valve_linkml.linkml2valve --help
+    python3 -m rltbl_linkml.linkml2rltbl --help
 
 ### Test schema conversion
 ```shell
-python3 -m test.test_linkml2valve
-# This will generate VALVE tables in the `test/valve_output` folder.
+python3 -m test.test_linkml2rltbl
+# This will generate rltbl tables in the `test/rltbl_output` folder.
 ```
 
-### Test VALVE validation
+### Test `rltbl` validation
 ```shell
-# PersonInfo - this will generate a VALVE sqlite db in the specified location
-rm test/valve_output/personinfo/personinfo.db
-ontodev_valve test/valve_output/personinfo/table.tsv test/valve_output/personinfo/personinfo.db --verbose
+# PersonInfo - this will generate a rltbl sqlite db in the specified location
+rm test/rltbl_output/personinfo/personinfo.db
+./rltbl test/rltbl_output/personinfo/table.tsv test/rltbl_output/personinfo/personinfo.db --verbose
 # 
 
 # Biolink
-rm test/valve_output/biolink/biolink.db
-ontodev_valve test/valve_output/biolink/table.tsv test/valve_output/biolink/biolink.db --verbose
+rm test/rltbl_output/biolink/biolink.db
+./rltbl test/rltbl_output/biolink/table.tsv test/rltbl_output/biolink/biolink.db --verbose
 ```
 
 ### Test LinkML validation
@@ -60,18 +60,18 @@ Note that it may be a typo, since it is a valid argument to linkml-convert (see 
 
 ```shell
 # Validate TSV
-linkml-validate --schema test/linkml_input/personinfo/personinfo.yaml --target-class Person --index-slot id test/valve_output/personinfo/data/Person.tsv
-linkml-validate --schema test/linkml_input/personinfo/personinfo.yaml --target-class Address --index-slot street test/valve_output/personinfo/data/Address.tsv
-linkml-validate --schema test/linkml_input/personinfo/personinfo.yaml --target-class ProcedureConcept --index-slot id test/valve_output/personinfo/data/ProcedureConcept.tsv
+linkml-validate --schema test/linkml_input/personinfo/personinfo.yaml --target-class Person --index-slot id test/rltbl_output/personinfo/data/Person.tsv
+linkml-validate --schema test/linkml_input/personinfo/personinfo.yaml --target-class Address --index-slot street test/rltbl_output/personinfo/data/Address.tsv
+linkml-validate --schema test/linkml_input/personinfo/personinfo.yaml --target-class ProcedureConcept --index-slot id test/rltbl_output/personinfo/data/ProcedureConcept.tsv
 ```
 
 #### LinkML conversion for validating JSON
 ```shell
 # Convert TSV to JSON
-linkml-convert --schema test/linkml_input/personinfo/personinfo.yaml --target-class Person --index-slot id test/valve_output/personinfo/data/Person.tsv -o test/valve_output/personinfo/data/Person.json
-linkml-convert --schema test/linkml_input/personinfo/personinfo.yaml --target-class Address --index-slot street test/valve_output/personinfo/data/Address.tsv -o test/valve_output/personinfo/data/Address.json
+linkml-convert --schema test/linkml_input/personinfo/personinfo.yaml --target-class Person --index-slot id test/rltbl_output/personinfo/data/Person.tsv -o test/rltbl_output/personinfo/data/Person.json
+linkml-convert --schema test/linkml_input/personinfo/personinfo.yaml --target-class Address --index-slot street test/rltbl_output/personinfo/data/Address.tsv -o test/rltbl_output/personinfo/data/Address.json
 
 # Validate JSON
-linkml-validate --schema test/linkml_input/personinfo/personinfo.yaml --target-class Person test/valve_output/personinfo/data/Person.json
-linkml-validate --schema test/linkml_input/personinfo/personinfo.yaml --target-class Address test/valve_output/personinfo/data/Address.json
+linkml-validate --schema test/linkml_input/personinfo/personinfo.yaml --target-class Person test/rltbl_output/personinfo/data/Person.json
+linkml-validate --schema test/linkml_input/personinfo/personinfo.yaml --target-class Address test/rltbl_output/personinfo/data/Address.json
 ```

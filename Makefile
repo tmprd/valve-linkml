@@ -1,43 +1,76 @@
 MAKEFLAGS += --warn-undefined-variables
 SHELL := bash
-.DEFAULT_GOAL := example_target
+.DEFAULT_GOAL := test_schema_load
 .DELETE_ON_ERROR:
 .SUFFIXES:
 
-.PHONY: clean example_target test_linkml2valve test_linkml_validation test_linkml_json_validation
+.PHONY: test_schema_load
 
-example_target:
-	python3 -m valve_linkml.linkml2valve "test/linkml_input/personinfo/personinfo.yaml" \
-		-o test/valve_output
+test_schema_load:
+	python3 -m test.test_linkml2rltbl
+	cd ../relatable && cargo build && cd -
+	RUST_BACKTRACE=1 ./rltbl --verbose init --force test/rltbl_output/personinfo/table.tsv
+	@echo -n "Database initialized. Sleeping for 3s before loading personinfo data ..."
+	@sleep 3
+	@echo
+	RUST_BACKTRACE=1 ./rltbl --verbose load table --force test/rltbl_output/personinfo/data/Address.tsv
+	RUST_BACKTRACE=1 ./rltbl --verbose load table --force test/rltbl_output/personinfo/data/MedicalEvent.tsv
+	RUST_BACKTRACE=1 ./rltbl --verbose load table --force test/rltbl_output/personinfo/data/Person.tsv
+	sqlite3 -header .relatable/relatable.db \
+	"SELECT \
+		m.procedure, \
+		m.started_at_time, \
+		m.ended_at_time, \
+		p.name, \
+		p.primary_email, \
+		a.street, \
+		a.city, \
+		a.postal_code \
+	FROM MedicalEvent m, Person p, Address a \
+	WHERE \
+		m.person = p.id \
+		AND p.current_address = a.id \
+		AND m.started_at_time >= '2020-01-01' \
+		AND m.ended_at_time <= '2020-12-31' \
+	ORDER BY \
+		m.procedure, \
+		m.started_at_time, \
+		m.ended_at_time, \
+		p.name, \
+		p.primary_email, \
+		a.street, \
+		a.city, \
+		a.postal_code" | tee /tmp/test_schema_load.out
+	# diff --strip-trailing-cr -q test/expected/test_schema_load.out /tmp/test_schema_load.out
 
-# If this doesn't work, don't worry ...
-test_linkml_validation: test/valve_output/personinfo/data/Person.tsv
+
+#####################
+# Linkml-specific targets. Don't worry if these targets below aren't quite working.
+#####################
+
+.PHONY: test_linkml_validation test_linkml_json_validation
+
+test_linkml_validation: test/rltbl_output/personinfo/data/Person.tsv
 	linkml-validate --schema test/linkml_input/personinfo/personinfo.yaml \
 		--target-class Person $<
 
-test_linkml_json_validation: test/valve_output/personinfo/data/Person.json
+test_linkml_json_validation: test/rltbl_output/personinfo/data/Person.json
 	linkml-validate --schema test/linkml_input/personinfo/personinfo.yaml --target-class Person $<
 
-test_linkml2valve:
-	python3 -m test.test_linkml2valve
-
-test/valve_output/personinfo/data/Person.json: test/valve_output/personinfo/data/Person.tsv
+test/rltbl_output/personinfo/data/Person.json: test/rltbl_output/personinfo/data/Person.tsv
 	linkml-convert --schema test/linkml_input/personinfo/personinfo.yaml \
 		--target-class Person --index-slot id -o $@ \
 		$<
 
-test/valve_output/personinfo/data/Person.tsv: test/valve_output/personinfo/data/Person.json
+test/rltbl_output/personinfo/data/Person.tsv: test/rltbl_output/personinfo/data/Person.json
 	linkml-convert --schema test/linkml_input/personinfo/personinfo.yaml \
 		--target-class Person --index-slot id -o $@ \
 		$<
 
-test/valve_output/personinfo/personinfo.db: test/valve_output/personinfo/data/Person.tsv
-	RLTBL_CONNECTION=$@ ./rltbl --verbose init --force
-	RLTBL_CONNECTION=$@ ./rltbl --verbose load table $< --force
+.PHONY: clean
 
 clean:
-	git checkout test
-	rm -f test/valve_output/*.tsv
-	rm -f test/valve_output/personinfo/data/Person.json
-	rm -f test/valve_output/personinfo/data/Person_no_id.tsv
-	rm -Rf test/valve_output/data
+	git checkout test/rltbl_output
+	rm -f test/rltbl_output/*.tsv .relatable/relatable.db
+	rm -f test/rltbl_output/personinfo/data/Person.json
+	rm -Rf test/rltbl_output/data

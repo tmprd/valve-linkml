@@ -17,7 +17,7 @@ def is_enum_table(table_name, enum_primary_key, column_dicts):
 
 def generate_schema_data(data_table_dicts: List[dict], data_column_dicts: List[dict], logger):
     """Generate data given some data table and column dicts. Exclude Enum tables.
-    Don't use this with VALVE config metadata."""
+    Don't use this with rltbl config metadata."""
     logger.info("Generating data tables...")
 
     # Map some pre-generated data to our data tables if we have the right kind

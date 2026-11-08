@@ -28,4 +28,4 @@ jobs:
           make test_linkml_json_validation
           # This one should be run last, since it modifies files that are used as input to
           # some of the above tests.
-          make test_linkml2valve
+          make test_linkml2rltbl

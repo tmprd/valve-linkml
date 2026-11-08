@@ -2,9 +2,11 @@
 
 import os
 import logging
+import sys
+
+from pprint import pformat
 from typing import List, Optional
 from argparse import ArgumentParser
-
 from linkml_runtime.utils.schemaview import (
     SchemaView,
     SlotDefinition,
@@ -12,23 +14,22 @@ from linkml_runtime.utils.schemaview import (
     ClassDefinitionName,
     EnumDefinition,
 )
-
-from .valve_schema import (
-    VALVE_SCHEMA,
+from .rltbl_schema import (
+    RLTBL_SCHEMA,
     table_row,
     column_row,
     datatype_row,
     primary_structure,
     from_structure,
     format_table_name,
-    prepend_valve_tables,
+    prepend_rltbl_tables,
 )
 from .utils import write_dicts2tsv
 from .data_generator import generate_schema_data
 
-# VALVE default constants
-DEFAULT_DATATYPE = VALVE_SCHEMA["defaults"]["datatype"]
-DEFAULT_PRIMARY_KEY = VALVE_SCHEMA["defaults"]["primary_key"]
+# RLTBL default constants
+DEFAULT_DATATYPE = RLTBL_SCHEMA["defaults"]["datatype"]
+DEFAULT_PRIMARY_KEY = RLTBL_SCHEMA["defaults"]["primary_key"]
 
 # LinkML default constants
 ENUM_PRIMARY_KEY = "permissible_value"
@@ -38,13 +39,13 @@ ENUM_MEANING_DATATYPE = "CURIE"
 # TODO change this to local var used in datatype mapping
 SCHEMA_DEFAULT_RANGE = DEFAULT_DATATYPE
 
-# Configure logging, using the environment variable `LINKML2VALVE_LOGGING_LEVEL`, if set, to
+# Configure logging, using the environment variable `LINKML2RLTBL_LOGGING_LEVEL`, if set, to
 # configure the logging level (default: warning).
 logging.basicConfig(
     format="%(asctime)s %(levelname)s %(message)s", datefmt="%Y-%m-%d %H:%M:%S", encoding="utf-8"
 )
-LOGGER = logging.getLogger("linkml2valve")
-logging_level = os.environ.get("LINKML2VALVE_LOGGING_LEVEL", "").casefold()
+LOGGER = logging.getLogger("linkml2rltbl")
+logging_level = os.environ.get("LINKML2RLTBL_LOGGING_LEVEL", "").casefold()
 if logging_level == "debug":
     LOGGER.setLevel(logging.DEBUG)
 elif logging_level == "info":
@@ -66,7 +67,7 @@ def main():
         "--output-dir",
         dest="OUTPUT_DIR",
         required=True,
-        help="Output directory for VALVE tables",
+        help="Output directory for RLTBL tables",
     )
     parser.add_argument(
         "-d",
@@ -87,37 +88,49 @@ def main():
         raise ValueError(f"Output directory '{args.OUTPUT_DIR}' does not exist.")
 
     # Run
-    linkml2valve(args.YAML_SCHEMA_PATH, args.OUTPUT_DIR, args.DATA_DIR, args.GENERATE_DATA)
+    linkml2rltbl(args.YAML_SCHEMA_PATH, args.OUTPUT_DIR, args.DATA_DIR, args.GENERATE_DATA)
 
 
-def linkml2valve(
+def linkml2rltbl(
     yaml_schema_path: str,
     output_dir: str,
     data_dir: str = None,
     generate_data: bool = False,
 ):
-    # Map LinkML schema to VALVE tables
-    mapped_valve_schema: dict = map_schema(yaml_schema_path, output_dir)
-    schema_tables = mapped_valve_schema["schema_tables"]
+    LOGGER.debug(
+        "In linkml2rltbl with: "
+        f"yaml_schema_path: {yaml_schema_path}, "
+        f"output_dir: {output_dir}, "
+        f"data_dir: {data_dir}, "
+        f"generate_data: {generate_data}"
+    )
 
-    # Write data table TSVs (without VALVE metadata rows)
-    serialize_data_tables(schema_tables, mapped_valve_schema["data_tables"])
+    # Map LinkML schema to RLTBL tables
+    mapped_rltbl_schema: dict = map_schema(yaml_schema_path, output_dir)
+    schema_tables = mapped_rltbl_schema["schema_tables"]
 
-    # Create the data table files with some generated data (exclude VALVE metadata rows by not
+    # LOGGER.debug(f"Mapped Rltbl Schema:\n{pformat(mapped_rltbl_schema)}")
+    # sys.exit(0)
+
+    # Write data table TSVs (without RLTBL metadata rows)
+    serialize_data_tables(schema_tables, mapped_rltbl_schema["data_tables"])
+    LOGGER.info("Done serializing 'data' tables.")
+
+    # Create the data table files with some generated data (exclude RLTBL metadata rows by not
     # adding them yet, and Enum tables)
     if generate_data:
         generate_schema_data(
             schema_tables["table"]["rows"], schema_tables["column"]["rows"], LOGGER
         )
 
-    # Prepend VALVE metadata rows to mapped schema tables
-    schema_tables = prepend_valve_tables(schema_tables, output_dir, LOGGER)
+    # Prepend RLTBL metadata rows to mapped schema tables
+    schema_tables = prepend_rltbl_tables(schema_tables, output_dir, LOGGER)
 
-    # Write schema/meta "config" table TSVs (with VALVE metadata rows prepended),
+    # Write schema/meta "config" table TSVs (with RLTBL metadata rows prepended),
     # ex. table, column, datatype
     serialize_schema_tables(schema_tables)
 
-    # Map LinkML yaml data and serialize to VALVE data TSVs
+    # Map LinkML yaml data and serialize to RLTBL data TSVs
     if data_dir is not None:
         # TODO: The map_data() function is not yet implemented and always returns an error.
         map_data(yaml_schema_path, data_dir)
@@ -126,7 +139,7 @@ def linkml2valve(
 
 
 def serialize_schema_tables(schema_tables: List[dict]):
-    # Serialize the combined VALVE schema and mapped LinkML schema to VALVE "config" TSVs,
+    # Serialize the combined RLTBL schema and mapped LinkML schema to RLTBL "config" TSVs,
     # ex. table, column, datatype
     for schema_table_name in schema_tables:
         schema_table_dict = schema_tables[schema_table_name]
@@ -134,7 +147,7 @@ def serialize_schema_tables(schema_tables: List[dict]):
         write_dicts2tsv(
             schema_table_path,
             schema_table_dict["rows"],
-            VALVE_SCHEMA["tables"][schema_table_name]["headers"],
+            RLTBL_SCHEMA["tables"][schema_table_name]["headers"],
         )
         LOGGER.debug(
             f"Wrote schema table {len(schema_table_dict['rows'])} rows to '{schema_table_path}'"
@@ -144,6 +157,7 @@ def serialize_schema_tables(schema_tables: List[dict]):
 def serialize_data_tables(schema_tables: List[dict], data_tables: List[dict]):
     # Serialize data tables listed in the Table table, and add data to them
     for schema_table_name in schema_tables:
+        LOGGER.debug(f"Serializing schema table: {schema_table_name}")
         if schema_table_name == "table":
             schema_table_dict = schema_tables[schema_table_name]
             for trow in schema_table_dict["rows"]:
@@ -153,6 +167,10 @@ def serialize_data_tables(schema_tables: List[dict], data_tables: List[dict]):
                     c["column"] for c in schema_tables["column"]["rows"] if c["table"] == tname
                 ]
                 tdata_rows = next((t for t in data_tables if t["table"] == tname), {}).get("rows")
+                LOGGER.debug(
+                    f"Writing table {schema_table_name} at path {tpath}. Data: {tdata_rows}. "
+                    f"Headers: {theaders}"
+                )
                 write_dicts2tsv(tpath, tdata_rows, theaders)
                 if tdata_rows:
                     LOGGER.debug(f"Wrote data table {len(tdata_rows)} rows to '{tpath}'")
@@ -358,6 +376,7 @@ def map_enums(
     updated_table_rows = all_table_rows.copy()
     updated_column_rows = all_column_rows.copy()
     for enum in all_enums:
+        LOGGER.info(f"ENUM: {enum}")
         # Map enum to Table table, with a Permissible Value column and IRI/meaning column
         updated_table_rows.append(table_row(enum.name, enum.description, output_dir))
 
