@@ -32,7 +32,7 @@ DEFAULT_DATATYPE = RLTBL_SCHEMA["defaults"]["datatype"]
 DEFAULT_PRIMARY_KEY = RLTBL_SCHEMA["defaults"]["primary_key"]
 
 # LinkML default constants
-ENUM_PRIMARY_KEY = "permissible_value"
+ENUM_PRIMARY_KEY = "label"
 ENUM_PRIMARY_KEY_DATATYPE = DEFAULT_DATATYPE
 ENUM_MEANING_DATATYPE = "CURIE"
 
@@ -109,8 +109,12 @@ def linkml2rltbl(
     mapped_rltbl_schema: dict = map_schema(yaml_schema_path, output_dir)
     schema_tables = mapped_rltbl_schema["schema_tables"]
 
-    # LOGGER.debug(f"Mapped Rltbl Schema:\n{pformat(mapped_rltbl_schema)}")
-    # sys.exit(0)
+    LOGGER.debug(
+        f"Schema tables:\n{pformat(schema_tables)}"
+        "\n"
+        f"Data tables:\n{pformat(mapped_rltbl_schema['data_tables'])}"
+    )
+    # sys.exit(1)
 
     # Write data table TSVs (without RLTBL metadata rows)
     serialize_data_tables(schema_tables, mapped_rltbl_schema["data_tables"])
@@ -184,6 +188,9 @@ def map_schema(yaml_schema_path: str, output_dir: str) -> dict[str, dict[str, st
         os.mkdir(data_table_dir)
         LOGGER.info(f"Created data directory '{data_table_dir}'")
 
+    # Note that other than creating the data/ directory in the output_dir, nothing else gets
+    # written to output_dir at this stage.
+
     # Parse schema
     linkml_schema = SchemaView(yaml_schema_path)
     all_classes = linkml_schema.all_classes().values()
@@ -222,9 +229,55 @@ def map_schema(yaml_schema_path: str, output_dir: str) -> dict[str, dict[str, st
     # This has to be done after adding primary keys for missing class identifiers.
     all_column_rows = map_multivalued_slots(all_slots, all_classes, all_column_rows)
 
+    # Add the terminology_table to the table table and its columns to the column table.
+    all_table_rows.append(
+        {
+            "description": None,
+            "path": "test-linkml/data/terminology.tsv",
+            "table": "terminology",
+            "type": None,
+        }
+    )
+    all_column_rows.extend(
+        [
+            {
+                "column": "label",
+                "datatype": "string",
+                "description": "a label",
+                "nulltype": None,
+                "structure": None,
+                "table": "terminology",
+            },
+            {
+                "column": "curie",
+                "datatype": "string",
+                "description": "a curie",
+                "nulltype": None,
+                "structure": None,
+                "table": "terminology",
+            },
+            {
+                "column": "iri",
+                "datatype": "string",
+                "description": "an iri",
+                "nulltype": None,
+                "structure": None,
+                "table": "terminology",
+            },
+            {
+                "column": "description",
+                "datatype": "string",
+                "description": "a description",
+                "nulltype": "empty",
+                "structure": None,
+                "table": "terminology",
+            },
+        ]
+    )
+
     # Map Enums
     all_table_rows, all_column_rows, data_tables = map_enums(
-        all_enums, all_table_rows, all_column_rows, data_table_dir
+        linkml_schema, all_enums, all_table_rows, all_column_rows, data_table_dir
     )
 
     # Check invariants
@@ -367,52 +420,97 @@ def map_multivalued_slots(
 
 
 def map_enums(
+    linkml_schema,
     all_enums: List[EnumDefinition],
     all_table_rows: List[dict],
     all_column_rows: List[dict],
     output_dir: str,
 ) -> List[dict]:
+    terminology_rows = []
     data_tables = []
     updated_table_rows = all_table_rows.copy()
     updated_column_rows = all_column_rows.copy()
     for enum in all_enums:
         LOGGER.info(f"ENUM: {enum}")
         # Map enum to Table table, with a Permissible Value column and IRI/meaning column
-        updated_table_rows.append(table_row(enum.name, enum.description, output_dir))
+        enum_table_row = table_row(enum.name, enum.description, output_dir)
+        updated_table_rows.append(enum_table_row)
 
         # Use the value as the primary key so it can serve as a foreign key
-        updated_column_rows.append(
-            column_row(
-                ENUM_PRIMARY_KEY,
-                enum.name,
-                "Permissible Value",
-                ENUM_PRIMARY_KEY_DATATYPE,
-                primary_structure(),
-                is_required=True,
-            )
+        permissible_value_column_row = column_row(
+            column_name=ENUM_PRIMARY_KEY,
+            table_name=enum.name,
+            description="a label",
+            datatype=ENUM_PRIMARY_KEY_DATATYPE,
+            structure=primary_structure(),
+            is_required=True,
         )
-        updated_column_rows.append(
-            column_row(
-                "meaning",
-                enum.name,
-                "CURIE meaning",
-                ENUM_MEANING_DATATYPE,
-                None,
-                is_required=False,
-            )
+        # print(f"PERMISSIBLE VALUE COLUMN ROW: {permissible_value_column_row}")
+        updated_column_rows.append(permissible_value_column_row)
+
+        meaning_column_row = column_row(
+            column_name="curie",
+            table_name=enum.name,
+            description="a curie",
+            datatype=ENUM_MEANING_DATATYPE,
+            structure=None,
+            is_required=False,
         )
+        # print(f"MEANING COLUMN ROW: {meaning_column_row}")
+        updated_column_rows.append(meaning_column_row)
+
+        description_column_row = column_row(
+            column_name="description",
+            table_name=enum.name,
+            description="a description",
+            datatype="string",
+            structure=None,
+            is_required=False,
+        )
+        # print(f"DESCRIPTION COLUMN ROW: {description_column_row}")
+        updated_column_rows.append(description_column_row)
 
         # Map enum values to rows in the enum table
         permissible_values = enum.permissible_values
+
+        # Add a row to the terminology table:
+        for _, pvalue in permissible_values.items():
+            terminology_rows.append(
+                {
+                    "label": pvalue["text"],
+                    "curie": pvalue["meaning"],
+                    "iri": linkml_schema.expand_curie(pvalue["meaning"]),
+                    "description": pvalue["description"],
+                }
+            )
+
         data_tables.append(
             {
                 "table": enum.name,
                 "rows": [
-                    {ENUM_PRIMARY_KEY: v, "meaning": permissible_values[v].meaning}
-                    for v in permissible_values
+                    {
+                        ENUM_PRIMARY_KEY: k,
+                        "curie": permissible_values[k].meaning,
+                        "description": permissible_values[k].description,
+                    }
+                    for k in permissible_values
                 ],
             }
         )
+
+    data_tables.append(
+        {
+            "table": "terminology",
+            "rows": terminology_rows,
+        }
+    )
+
+    # print(f"UPDATED TABLE ROWS: {pformat(updated_table_rows)}")
+    # print()
+    # print(f"UPDATED COLUMN ROWS: {pformat(updated_column_rows)}")
+    # print()
+    # print(f"DATA TABLES: {pformat(data_tables)}")
+
     return [updated_table_rows, updated_column_rows, data_tables]
 
 
