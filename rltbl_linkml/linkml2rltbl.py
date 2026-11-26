@@ -230,48 +230,41 @@ def map_schema(yaml_schema_path: str, output_dir: str) -> dict[str, dict[str, st
     all_column_rows = map_multivalued_slots(all_slots, all_classes, all_column_rows)
 
     # Add the terminology_table to the table table and its columns to the column table.
-    all_table_rows.append(
-        {
-            "description": None,
-            "path": "test-linkml/data/terminology.tsv",
-            "table": "terminology",
-            "type": None,
-        }
-    )
+    all_table_rows.append(table_row("terminology", None, "test-linkml/data/"))
     all_column_rows.extend(
         [
-            {
-                "column": "label",
-                "datatype": "string",
-                "description": "a label",
-                "nulltype": None,
-                "structure": None,
-                "table": "terminology",
-            },
-            {
-                "column": "curie",
-                "datatype": "string",
-                "description": "a curie",
-                "nulltype": None,
-                "structure": None,
-                "table": "terminology",
-            },
-            {
-                "column": "iri",
-                "datatype": "string",
-                "description": "an iri",
-                "nulltype": None,
-                "structure": None,
-                "table": "terminology",
-            },
-            {
-                "column": "description",
-                "datatype": "string",
-                "description": "a description",
-                "nulltype": "empty",
-                "structure": None,
-                "table": "terminology",
-            },
+            column_row(
+                column_name="label",
+                table_name="terminology",
+                description="a label",
+                datatype="string",
+                structure=None,
+                is_required=True,
+            ),
+            column_row(
+                column_name="curie",
+                table_name="terminology",
+                description="a curie",
+                datatype="string",
+                structure=None,
+                is_required=True,
+            ),
+            column_row(
+                column_name="iri",
+                table_name="terminology",
+                description="an iri",
+                datatype="string",
+                structure=None,
+                is_required=True,
+            ),
+            column_row(
+                column_name="description",
+                table_name="terminology",
+                description="a description",
+                datatype="string",
+                structure=None,
+                is_required=True,
+            ),
         ]
     )
 
