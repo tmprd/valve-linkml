@@ -216,6 +216,7 @@ def map_schema(yaml_schema_path: str, output_dir: str) -> dict[str, dict[str, st
 
     # Map classes to Table table rows
     for linkml_class in all_classes:
+        # print(f"LINKML CLASS: {linkml_class}")
         all_table_rows.append(
             table_row(linkml_class.name, linkml_class.description, data_table_dir)
         )
@@ -311,6 +312,7 @@ def map_class_slots(
     # (Note: these include slots/attributes inherited from "mixins".)
     all_class_slots = get_all_class_slots_sorted(linkml_schema, linkml_class)
     for slot in all_class_slots:
+        # print(f"CLASS SLOT: {slot}")
 
         # Map slot to Column table row
         new_column_row = map_class_slot(linkml_schema, slot, linkml_class, all_classes, all_enums)
@@ -319,7 +321,9 @@ def map_class_slots(
 
         class_has_primary_key = class_has_primary_key or (
             new_column_row["structure"] == primary_structure()
+            or new_column_row["structure"].startswith("from(")
         )
+        # print(f"NEW COLUMN ROW: {pformat(new_column_row)}")
 
         # Map the range of a class-specific slot_usage to a new Datatype row if the range is not a
         # class or enum. This should be the dataype of the new Column row.
@@ -340,9 +344,11 @@ def map_class_slots(
 
     # If no identifier slot was found and used as a primary key, we need to make one for this
     # class and add it to the Column table
+    # print(f"NEW COLUMN ROWS (BEFORE): {pformat(new_column_rows)}")
     if not class_has_primary_key:
         new_column_rows = generate_table_primary_key(linkml_class, new_column_rows)
 
+    # print(f"NEW COLUMN ROWS (AFTER): {pformat(new_column_rows)}")
     return [all_column_rows + new_column_rows, all_datatype_rows + new_datatype_rows]
 
 
