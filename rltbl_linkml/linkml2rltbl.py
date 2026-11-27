@@ -2,7 +2,6 @@
 
 import os
 import logging
-import sys
 
 from pprint import pformat
 from typing import List, Optional
@@ -182,8 +181,8 @@ def serialize_data_tables(schema_tables: List[dict], data_tables: List[dict]):
 
 def map_schema(yaml_schema_path: str, output_dir: str) -> dict[str, dict[str, str]]:
     global SCHEMA_DEFAULT_RANGE
-    # Data tables go in a subdirectory of the schema directory by default
-    data_table_dir = os.path.join(output_dir, "data")
+    # Verify that the ouput directory exists and create it if it does not:
+    data_table_dir = output_dir
     if not os.path.isdir(data_table_dir):
         os.mkdir(data_table_dir)
         LOGGER.info(f"Created data directory '{data_table_dir}'")
@@ -193,6 +192,8 @@ def map_schema(yaml_schema_path: str, output_dir: str) -> dict[str, dict[str, st
 
     # Parse schema
     linkml_schema = SchemaView(yaml_schema_path)
+    LOGGER.debug(f"LINKML_SCHEMA: {linkml_schema}")
+
     all_classes = linkml_schema.all_classes().values()
     all_slots = linkml_schema.all_slots().values()
     all_enums = linkml_schema.all_enums().values()
@@ -231,7 +232,7 @@ def map_schema(yaml_schema_path: str, output_dir: str) -> dict[str, dict[str, st
     all_column_rows = map_multivalued_slots(all_slots, all_classes, all_column_rows)
 
     # Add the terminology_table to the table table and its columns to the column table.
-    all_table_rows.append(table_row("terminology", None, "test-linkml/data/"))
+    all_table_rows.append(table_row("terminology", None, output_dir))
     all_column_rows.extend(
         [
             column_row(
