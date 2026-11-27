@@ -16,21 +16,9 @@ Convert [LinkML](https://github.com/linkml/linkml) schemas + data to [Relatable]
 
         git clone git@github.com:lmcmicu/rltbl_linkml.git
 
-2. Navigate to the just-cloned repository's root directory.
+2. Install the package (usually in a [virtual environment](https://github.com/knocean/practises/tree/master/python#setup)).
 
-        cd rltbl_linkml
-
-3. Create a python virtual environment in the root directory of the repository.
-
-        python3 -m venv _venv
-
-4. Activate the newly-created virtual environment.
-
-        . _venv/bin/activate
-
-5. Install the python requirements to the virtual environment (this might take a few minutes).
-
-        pip3 install -r requirements.txt
+        pip3 install .
 
 ## Show usage
 
@@ -55,8 +43,7 @@ rm test/rltbl_output/biolink/biolink.db
 ```
 
 ### Test LinkML validation
-TODO: The --index-slot argument no longer exists in the new version of linkml. Is it needed below? What's the equivalent?
-Note that it may be a typo, since it is a valid argument to linkml-convert (see below).
+**TODO**: There is no `--index-slot` argument in the current version of `linkml-validate`. Is it a typo?
 
 ```shell
 # Validate TSV
