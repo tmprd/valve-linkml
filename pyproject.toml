@@ -1,0 +1,13 @@
+[project]
+name = "rltbl_linkml"
+version = "0.0.1"
+dependencies = [
+  "linkml==1.12.1"
+]
+requires-python = ">= 3.13"
+license-files = ["LICENSE"]
+readme = "README.md"
+
+[build-system]
+requires = ["hatchling >= 1.33"]
+build-backend = "hatchling.build"
