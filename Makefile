@@ -41,11 +41,11 @@ test_schema_load:
 		a.street, \
 		a.city, \
 		a.postal_code" | tee /tmp/test_schema_load.out
-	# diff --strip-trailing-cr -q test/expected/test_schema_load.out /tmp/test_schema_load.out
+	diff --strip-trailing-cr -q test/expected/test_schema_load.out /tmp/test_schema_load.out
 
 
 #####################
-# Linkml-specific targets. Don't worry if these targets below aren't quite working.
+# Linkml-specific targets.
 #####################
 
 .PHONY: test_linkml_validation test_linkml_json_validation

@@ -113,7 +113,6 @@ def linkml2rltbl(
         "\n"
         f"Data tables:\n{pformat(mapped_rltbl_schema['data_tables'])}"
     )
-    # sys.exit(1)
 
     # Write data table TSVs (without RLTBL metadata rows)
     serialize_data_tables(schema_tables, mapped_rltbl_schema["data_tables"])
@@ -187,12 +186,8 @@ def map_schema(yaml_schema_path: str, output_dir: str) -> dict[str, dict[str, st
         os.mkdir(data_table_dir)
         LOGGER.info(f"Created data directory '{data_table_dir}'")
 
-    # Note that other than creating the data/ directory in the output_dir, nothing else gets
-    # written to output_dir at this stage.
-
     # Parse schema
     linkml_schema = SchemaView(yaml_schema_path)
-    LOGGER.debug(f"LINKML_SCHEMA: {linkml_schema}")
 
     all_classes = linkml_schema.all_classes().values()
     all_slots = linkml_schema.all_slots().values()
@@ -217,7 +212,6 @@ def map_schema(yaml_schema_path: str, output_dir: str) -> dict[str, dict[str, st
 
     # Map classes to Table table rows
     for linkml_class in all_classes:
-        # print(f"LINKML CLASS: {linkml_class}")
         all_table_rows.append(
             table_row(linkml_class.name, linkml_class.description, data_table_dir)
         )
@@ -313,8 +307,6 @@ def map_class_slots(
     # (Note: these include slots/attributes inherited from "mixins".)
     all_class_slots = get_all_class_slots_sorted(linkml_schema, linkml_class)
     for slot in all_class_slots:
-        # print(f"CLASS SLOT: {slot}")
-
         # Map slot to Column table row
         new_column_row = map_class_slot(linkml_schema, slot, linkml_class, all_classes, all_enums)
         if new_column_row is None:
@@ -322,9 +314,8 @@ def map_class_slots(
 
         class_has_primary_key = class_has_primary_key or (
             new_column_row["structure"] == primary_structure()
-            or new_column_row["structure"].startswith("from(")
+            or new_column_row.get("structure", "").startswith("from(")
         )
-        # print(f"NEW COLUMN ROW: {pformat(new_column_row)}")
 
         # Map the range of a class-specific slot_usage to a new Datatype row if the range is not a
         # class or enum. This should be the dataype of the new Column row.
@@ -345,11 +336,9 @@ def map_class_slots(
 
     # If no identifier slot was found and used as a primary key, we need to make one for this
     # class and add it to the Column table
-    # print(f"NEW COLUMN ROWS (BEFORE): {pformat(new_column_rows)}")
     if not class_has_primary_key:
         new_column_rows = generate_table_primary_key(linkml_class, new_column_rows)
 
-    # print(f"NEW COLUMN ROWS (AFTER): {pformat(new_column_rows)}")
     return [all_column_rows + new_column_rows, all_datatype_rows + new_datatype_rows]
 
 
@@ -431,7 +420,6 @@ def map_enums(
     updated_table_rows = all_table_rows.copy()
     updated_column_rows = all_column_rows.copy()
     for enum in all_enums:
-        LOGGER.info(f"ENUM: {enum}")
         # Map enum to Table table, with a Permissible Value column and IRI/meaning column
         enum_table_row = table_row(enum.name, enum.description, output_dir)
         updated_table_rows.append(enum_table_row)
@@ -445,7 +433,6 @@ def map_enums(
             structure=primary_structure(),
             is_required=True,
         )
-        # print(f"PERMISSIBLE VALUE COLUMN ROW: {permissible_value_column_row}")
         updated_column_rows.append(permissible_value_column_row)
 
         meaning_column_row = column_row(
@@ -456,7 +443,6 @@ def map_enums(
             structure=None,
             is_required=False,
         )
-        # print(f"MEANING COLUMN ROW: {meaning_column_row}")
         updated_column_rows.append(meaning_column_row)
 
         description_column_row = column_row(
@@ -467,7 +453,6 @@ def map_enums(
             structure=None,
             is_required=False,
         )
-        # print(f"DESCRIPTION COLUMN ROW: {description_column_row}")
         updated_column_rows.append(description_column_row)
 
         # Map enum values to rows in the enum table
@@ -505,12 +490,6 @@ def map_enums(
         }
     )
 
-    # print(f"UPDATED TABLE ROWS: {pformat(updated_table_rows)}")
-    # print()
-    # print(f"UPDATED COLUMN ROWS: {pformat(updated_column_rows)}")
-    # print()
-    # print(f"DATA TABLES: {pformat(data_tables)}")
-
     return [updated_table_rows, updated_column_rows, data_tables]
 
 
@@ -525,8 +504,9 @@ def map_class_slot(
     # Instead, this will be mapped to another table after all class slots have been mapped and
     # primary keys are generated.
     if slot.multivalued:
-        # LOGGER.info(f"Skipping multivalued slot '{slot.name}' in class "
-        #             f"'{slot_class.name}' for now.")
+        LOGGER.debug(
+            f"Skipping multivalued slot '{slot.name}' in class " f"'{slot_class.name}' for now."
+        )
         return None
 
     column_datatype = DEFAULT_DATATYPE
